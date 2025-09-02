@@ -12,6 +12,9 @@ public class ArmAimer : MonoBehaviour
     [SerializeField] private string targetTag = "Enemy"; // 敵タグ
     [SerializeField] private float lockRadius = 50f;     // サーチ半径（ワールド単位）
 
+    [SerializeField] private TargetMarker targetMarkerPrefab;
+    private TargetMarker markerInstance;
+
     private Transform lockTarget;
 
     void Update()
@@ -38,21 +41,38 @@ public class ArmAimer : MonoBehaviour
             // 非ロックオン時は「体の向き」に合わせて腕を前方へ向けておく（任意）
             armPivot.rotation = Quaternion.Euler(0, 0, bodyRenderer.flipX ? 180f : 0f);
         }
+
+        if (lockTarget == null)
+        {
+            // 非ロック時：マーカーを消す
+            if (markerInstance) { Destroy(markerInstance.gameObject); markerInstance = null; }
+        }
     }
 
-    private void ToggleLockOn()
+    void ToggleLockOn()
     {
-        if (lockTarget != null) { lockTarget = null; return; }
+        if (lockTarget != null)
+        {
+            lockTarget = null;
+            if (markerInstance) { Destroy(markerInstance.gameObject); markerInstance = null; }
+            return;
+        }
 
-        // 近い敵をサーチ
-        Transform nearest = null;
-        float best = lockRadius * lockRadius;
-        var enemies = GameObject.FindGameObjectsWithTag(targetTag);
-        foreach (var e in enemies)
+        Transform nearest = null; float best = lockRadius * lockRadius;
+        foreach (var e in GameObject.FindGameObjectsWithTag(targetTag))
         {
             float d2 = (e.transform.position - armPivot.position).sqrMagnitude;
             if (d2 < best) { best = d2; nearest = e.transform; }
         }
+
         lockTarget = nearest;
+
+        // ★ マーカー生成／ターゲット設定
+        if (lockTarget)
+        {
+            if (markerInstance == null)
+                markerInstance = Instantiate(targetMarkerPrefab);
+            markerInstance.SetTarget(lockTarget);
+        }
     }
 }
