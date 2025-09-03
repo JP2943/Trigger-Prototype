@@ -9,6 +9,8 @@ public class TargetMarker : MonoBehaviour
     [SerializeField] bool keepFixedScreenSize = true;
     [SerializeField] float referenceOrthoSize = 5f; // カメラの基準ズーム
     [SerializeField] float referenceScale = 1f;     // 基準スケール
+    [SerializeField] private SpriteRenderer sr;
+    public void SetTint(Color c) { if (!sr) sr = GetComponent<SpriteRenderer>(); if (sr) sr.color = c; }
 
     Transform target;
     Camera cam;

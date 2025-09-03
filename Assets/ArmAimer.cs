@@ -1,62 +1,65 @@
 using UnityEngine;
-using UnityEngine.InputSystem; // 新Input System
+using UnityEngine.InputSystem;
 
-public class ArmAimer : MonoBehaviour
+public class ArmAimerSingle : MonoBehaviour
 {
-    [Header("Refs")]
-    [SerializeField] private Transform armPivot;         // 肩の基準(ArmPivot)
-    [SerializeField] private SpriteRenderer bodyRenderer; // 立ち絵(Body)
+    [Header("Arm Setup")]
+    [SerializeField] private Transform shoulderAnchor;   // R_Shoulder or L_Shoulder
+    [SerializeField] private Transform armPivot;         // R_ArmPivot or L_ArmPivot
+    [SerializeField] private SpriteRenderer bodyRenderer;// Body（体の向き参照）
+    [Tooltip("腕スプライトの基準向き。右向き=0°, 左向き=180°")]
+    [SerializeField] private float angleOffsetDeg = 0f;  // 左腕が左向き絵なら 180 に
 
     [Header("Lock-on")]
-    [SerializeField] private Key lockKey = Key.F;        // ロックオン切替キー
-    [SerializeField] private string targetTag = "Enemy"; // 敵タグ
-    [SerializeField] private float lockRadius = 50f;     // サーチ半径（ワールド単位）
+    [SerializeField] private Key lockKey = Key.F;        // 右腕=F、左腕=G など
+    [SerializeField] private string targetTag = "Enemy";
+    [SerializeField] private float lockRadius = 50f;
 
-    [SerializeField] private TargetMarker targetMarkerPrefab;
-    private TargetMarker markerInstance;
+    [Header("Marker")]
+    [SerializeField] private TargetMarker markerPrefab;  // 共通プレハブ
+    [SerializeField] private Color markerTint = Color.white;
 
-    private Transform lockTarget;
+    Transform target;
+    TargetMarker marker;
 
-    void Update()
+    void Awake()
     {
+        // 念のため親子関係を保証
+        if (shoulderAnchor && armPivot && armPivot.parent != shoulderAnchor)
+            armPivot.SetParent(shoulderAnchor, worldPositionStays: true);
+    }
+
+    void LateUpdate()
+    {
+        // 肩に固定（プレイヤー/アニメ/物理の後で）
+        if (shoulderAnchor && armPivot)
+            armPivot.position = shoulderAnchor.position;
+
+        // キーでロック切替
         var kb = Keyboard.current;
         if (kb != null && kb[lockKey].wasPressedThisFrame)
-        {
-            ToggleLockOn();
-        }
+            ToggleLock();
 
-        if (lockTarget != null)
+        if (target)
         {
-            // ターゲット方向に常に向ける（プレイヤーや敵が動いてもOK）
-            Vector2 dir = (lockTarget.position - armPivot.position);
-            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-            armPivot.rotation = Quaternion.Euler(0f, 0f, angle);
+            Vector2 dir = (target.position - armPivot.position);
+            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg + angleOffsetDeg;
+            armPivot.rotation = Quaternion.Euler(0, 0, angle);
 
-            // もしターゲットが半径外/破棄されたら解除
-            if (!lockTarget || dir.sqrMagnitude > lockRadius * lockRadius)
-                lockTarget = null;
+            // 距離が離れた/ターゲット破棄で解除
+            if (!target || dir.sqrMagnitude > lockRadius * lockRadius) ClearLock();
         }
         else
         {
-            // 非ロックオン時は「体の向き」に合わせて腕を前方へ向けておく（任意）
-            armPivot.rotation = Quaternion.Euler(0, 0, bodyRenderer.flipX ? 180f : 0f);
-        }
-
-        if (lockTarget == null)
-        {
-            // 非ロック時：マーカーを消す
-            if (markerInstance) { Destroy(markerInstance.gameObject); markerInstance = null; }
+            // 非ロック時は体の向きに合わせて正面へ
+            float baseAngle = (bodyRenderer && bodyRenderer.flipX) ? 180f : 0f;
+            armPivot.rotation = Quaternion.Euler(0, 0, baseAngle + angleOffsetDeg);
         }
     }
 
-    void ToggleLockOn()
+    void ToggleLock()
     {
-        if (lockTarget != null)
-        {
-            lockTarget = null;
-            if (markerInstance) { Destroy(markerInstance.gameObject); markerInstance = null; }
-            return;
-        }
+        if (target) { ClearLock(); return; }
 
         Transform nearest = null; float best = lockRadius * lockRadius;
         foreach (var e in GameObject.FindGameObjectsWithTag(targetTag))
@@ -64,15 +67,18 @@ public class ArmAimer : MonoBehaviour
             float d2 = (e.transform.position - armPivot.position).sqrMagnitude;
             if (d2 < best) { best = d2; nearest = e.transform; }
         }
+        target = nearest;
 
-        lockTarget = nearest;
-
-        // ★ マーカー生成／ターゲット設定
-        if (lockTarget)
+        if (target)
         {
-            if (markerInstance == null)
-                markerInstance = Instantiate(targetMarkerPrefab);
-            markerInstance.SetTarget(lockTarget);
+            if (!marker && markerPrefab) marker = Instantiate(markerPrefab);
+            if (marker) { marker.SetTarget(target); marker.SetTint(markerTint); }
         }
+    }
+
+    void ClearLock()
+    {
+        target = null;
+        if (marker) { Destroy(marker.gameObject); marker = null; }
     }
 }
