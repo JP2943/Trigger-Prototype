@@ -1,109 +1,118 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class ArmAimer : MonoBehaviour
+public class ArmAimerSingle : MonoBehaviour
 {
-    [Header("Refs")]
-    [SerializeField] private Transform shoulderAnchor;
+    [Header("Arm Setup")]
     [SerializeField] private Transform armPivot;
-    [SerializeField] private SpriteRenderer bodyRenderer;
+    [SerializeField] private SpriteRenderer bodyRenderer;  // 体の向き参照
+    [SerializeField] private Transform bodyTransform;      // 未設定なら bodyRenderer.transform を使用
 
-    // ★ 追加
+    [Header("Shoulder Offsets (right-facing, local to Body)")]
+    [SerializeField] private Vector2 shoulderOffsetIdle = new(0.20f, 0.85f);
+    [SerializeField] private Vector2 shoulderOffsetWalk = new(0.20f, 0.85f);
+    [SerializeField] private Vector2 shoulderOffsetJump = new(0.20f, 0.95f);
+    [SerializeField] private float offsetLerpSpeed = 15f; // 切替の滑らかさ
+
+    [Header("Animator Params")]
+    [SerializeField] private Animator bodyAnimator;        // Body の Animator
+    [SerializeField] private string speedParam = "Speed";  // 0..1
+    [SerializeField] private string airborneParam = "Airborne"; // bool
+
+    [Header("Aim/Look (既存)")]
     [SerializeField] private SpriteRenderer armRenderer;
     [SerializeField] private bool autoFlipYOnLeft = true;
-    [SerializeField] private float angleOffsetDeg = 0f; // 左腕が左向き絵なら 180
-
-    [Header("Lock-on")]
+    [SerializeField] private float angleOffsetDeg = 0f;
     [SerializeField] private Key lockKey = Key.F;
     [SerializeField] private string targetTag = "Enemy";
     [SerializeField] private float lockRadius = 50f;
-
-    [Header("Marker")]
     [SerializeField] private TargetMarker markerPrefab;
     [SerializeField] private Color markerTint = Color.white;
 
-    // 肩のソケット位置（Bodyのローカル座標：右向き時の値を入れる）
-    [SerializeField] private Vector2 shoulderLocalOffset = new Vector2(0.20f, 0.85f);
-    // BodyのTransform（未設定ならbodyRenderer.transformを使う）
-    [SerializeField] private Transform bodyTransform;
-
-    Transform lockTarget;
-    TargetMarker marker;
+    Transform target; TargetMarker marker;
+    Vector2 currentOffset; // 状態間をスムーズに補間
 
     void Awake()
     {
-        if (shoulderAnchor && armPivot && armPivot.parent != shoulderAnchor)
-            armPivot.SetParent(shoulderAnchor, worldPositionStays: true);
+        if (!bodyTransform && bodyRenderer) bodyTransform = bodyRenderer.transform;
+        currentOffset = shoulderOffsetIdle;
     }
 
     void LateUpdate()
     {
-        // ★ 肩位置を Body のローカルオフセットから算出（flipXでXを反転）
-        if (!bodyTransform && bodyRenderer) bodyTransform = bodyRenderer.transform;
-
-        if (bodyTransform)
+        // ------ 肩位置（状態に応じてオフセットを選ぶ） ------
+        Vector2 targetOffset = shoulderOffsetIdle;
+        if (bodyAnimator)
         {
-            float x = bodyRenderer && bodyRenderer.flipX ? -shoulderLocalOffset.x : shoulderLocalOffset.x;
-            Vector3 local = new Vector3(x, shoulderLocalOffset.y, 0f);
-            armPivot.position = bodyTransform.TransformPoint(local);
+            bool airborne = bodyAnimator.GetBool(Animator.StringToHash(airborneParam));
+            float speed = bodyAnimator.GetFloat(Animator.StringToHash(speedParam));
+            if (airborne) targetOffset = shoulderOffsetJump;
+            else if (speed > 0.01f) targetOffset = shoulderOffsetWalk;
         }
 
+        // スムーズに切替
+        float t = 1f - Mathf.Exp(-offsetLerpSpeed * Time.deltaTime);
+        currentOffset = Vector2.Lerp(currentOffset, targetOffset, t);
+
+        // flipX なら X を反転して世界座標へ変換
+        float x = (bodyRenderer && bodyRenderer.flipX) ? -currentOffset.x : currentOffset.x;
+        Vector3 local = new Vector3(x, currentOffset.y, 0f);
+        if (bodyTransform) armPivot.position = bodyTransform.TransformPoint(local);
+
+        // ------ 以下：既存のロックオン＆角度計算 ------
         var kb = Keyboard.current;
         if (kb != null && kb[lockKey].wasPressedThisFrame) ToggleLock();
 
-        if (lockTarget)
+        if (target)
         {
-            Vector2 dir = (lockTarget.position - armPivot.position);
-            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg + angleOffsetDeg;
-            armPivot.rotation = Quaternion.Euler(0, 0, angle);
+            Vector2 dir = (target.position - armPivot.position);
+            float ang = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg + angleOffsetDeg;
+            armPivot.rotation = Quaternion.Euler(0, 0, ang);
 
-            // ★ 縦反転補正
             if (armRenderer && autoFlipYOnLeft)
             {
-                bool facingLeft = (angle > 90f || angle < -90f);
-                armRenderer.flipY = facingLeft;
-                armRenderer.flipX = false;
+                bool left = (ang > 90f || ang < -90f);
+                armRenderer.flipY = left; armRenderer.flipX = false;
             }
-
-            if (!lockTarget || dir.sqrMagnitude > lockRadius * lockRadius) ClearLock();
+            if (!target || dir.sqrMagnitude > lockRadius * lockRadius) ClearLock();
         }
         else
         {
-            float baseAngle = (bodyRenderer && bodyRenderer.flipX) ? 180f : 0f;
-            float a = baseAngle + angleOffsetDeg;
+            float baseAng = (bodyRenderer && bodyRenderer.flipX) ? 180f : 0f;
+            float a = baseAng + angleOffsetDeg;
             armPivot.rotation = Quaternion.Euler(0, 0, a);
-
-            // ★ 非ロック時も補正
             if (armRenderer && autoFlipYOnLeft)
             {
-                armRenderer.flipY = (a > 90f || a < -90f);
-                armRenderer.flipX = false;
+                armRenderer.flipY = (a > 90f || a < -90f); armRenderer.flipX = false;
             }
         }
     }
 
     void ToggleLock()
     {
-        if (lockTarget) { ClearLock(); return; }
-
+        if (target) { ClearLock(); return; }
         Transform nearest = null; float best = lockRadius * lockRadius;
         foreach (var e in GameObject.FindGameObjectsWithTag(targetTag))
         {
             float d2 = (e.transform.position - armPivot.position).sqrMagnitude;
             if (d2 < best) { best = d2; nearest = e.transform; }
         }
-        lockTarget = nearest;
-
-        if (lockTarget)
+        target = nearest;
+        if (target && markerPrefab)
         {
-            if (!marker && markerPrefab) marker = Instantiate(markerPrefab);
-            if (marker) { marker.SetTarget(lockTarget); marker.SetTint(markerTint); }
+            if (!marker) marker = Instantiate(markerPrefab);
+            marker.SetTarget(target); marker.SetTint(markerTint);
         }
     }
 
-    void ClearLock()
+    void ClearLock() { target = null; if (marker) { Destroy(marker.gameObject); marker = null; } }
+
+    // 視覚デバッグ（選択時）
+    void OnDrawGizmosSelected()
     {
-        lockTarget = null;
-        if (marker) { Destroy(marker.gameObject); marker = null; }
+        if (!bodyTransform) return;
+        float x = (bodyRenderer && bodyRenderer.flipX) ? -currentOffset.x : currentOffset.x;
+        Vector3 p = bodyTransform.TransformPoint(new Vector3(x, currentOffset.y, 0f));
+        Gizmos.color = Color.yellow; Gizmos.DrawWireSphere(p, 0.04f);
     }
 }
