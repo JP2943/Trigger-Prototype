@@ -6,15 +6,19 @@ using UnityEngine.InputSystem;
 public class BodyLocomotion2D : MonoBehaviour
 {
     [Header("Refs")]
-    [SerializeField] private SpriteRenderer bodyRenderer; // Body の SR
-    [SerializeField] private Animator bodyAnimator;       // Idle/Walk/Jump を持つ
-    [SerializeField] private Transform groundCheck;       // 足元の空オブジェクト
+    [SerializeField] private SpriteRenderer bodyRenderer;
+    [SerializeField] private Animator bodyAnimator;
+    [SerializeField] private Transform groundCheck;
     [SerializeField] private Vector2 groundCheckSize = new(0.28f, 0.06f);
-    [SerializeField] private LayerMask groundMask;        // Ground レイヤー
+    [SerializeField] private LayerMask groundMask;
 
     [Header("Move/Jump")]
     [SerializeField] private float moveSpeed = 2.8f;
-    [SerializeField] private float jumpForce = 6.0f;      // 2Dの重力Scale=3〜5を想定
+    [SerializeField] private float jumpForce = 6.0f;
+
+    [Header("Input Actions")]
+    public InputActionReference moveAction;  // Gameplay/Move
+    public InputActionReference jumpAction;  // Gameplay/Jump
 
     static readonly int SpeedHash = Animator.StringToHash("Speed");
     static readonly int AirborneHash = Animator.StringToHash("Airborne");
@@ -22,51 +26,52 @@ public class BodyLocomotion2D : MonoBehaviour
     Rigidbody2D rb;
     float inputX;
     int lastDir = 1;
-    bool wantJump;    // スペースが押されたフラグ
-    bool grounded;
+    bool grounded, wantJump;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        rb.freezeRotation = true;           // 転倒防止
+        rb.freezeRotation = true;
+    }
+    void OnEnable()
+    {
+        moveAction?.action.Enable();
+        jumpAction?.action.Enable();
+    }
+    void OnDisable()
+    {
+        moveAction?.action.Disable();
+        jumpAction?.action.Disable();
     }
 
     void Update()
     {
-        // --- 横入力 ---
-        var kb = Keyboard.current;
-        int x = 0;
-        if (kb != null)
-        {
-            if (kb.leftArrowKey.isPressed || kb.aKey.isPressed) x -= 1;
-            if (kb.rightArrowKey.isPressed || kb.dKey.isPressed) x += 1;
-            if (kb.spaceKey.wasPressedThisFrame) wantJump = true; // ジャンプ要求
-        }
-        inputX = x;
+        // 1D Axis を読む（-1 ～ 1）
+        float x = moveAction ? moveAction.action.ReadValue<float>() : 0f;
+        // デッドゾーン処理（十字キーなのでガタつきは少ないが保険）
+        inputX = Mathf.Abs(x) < 0.1f ? 0f : Mathf.Sign(x);
 
-        if (x != 0) lastDir = x;
+        if (inputX != 0) lastDir = (int)Mathf.Sign(inputX);
         if (bodyRenderer) bodyRenderer.flipX = (lastDir < 0);
 
-        // --- 接地判定（毎フレーム） ---
         grounded = IsGrounded();
         bodyAnimator.SetBool(AirborneHash, !grounded);
-
-        // --- 歩行アニメ速度 ---
         bodyAnimator.SetFloat(SpeedHash, Mathf.Abs(inputX));
+
+        // B（buttonEast）が押された瞬間を検出
+        if (jumpAction && jumpAction.action.WasPressedThisFrame()) wantJump = true;
     }
 
     void FixedUpdate()
     {
-        // --- 横移動 ---
         Vector2 v = rb.linearVelocity;
         v.x = inputX * moveSpeed;
         rb.linearVelocity = v;
 
-        // --- ジャンプ実行（接地中だけ） ---
         if (wantJump && grounded)
         {
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);                // 上向き速度をリセット
-            rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);    // インパルス
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
+            rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
         }
         wantJump = false;
     }
@@ -74,15 +79,12 @@ public class BodyLocomotion2D : MonoBehaviour
     bool IsGrounded()
     {
         if (!groundCheck) return false;
-        Collider2D hit = Physics2D.OverlapBox(groundCheck.position, groundCheckSize, 0f, groundMask);
-        return hit != null;
+        return Physics2D.OverlapBox(groundCheck.position, groundCheckSize, 0f, groundMask) != null;
     }
-
-    // 足元の検出範囲を可視化
     void OnDrawGizmosSelected()
     {
         if (!groundCheck) return;
         Gizmos.color = Color.green;
-        Gizmos.DrawWireCube(groundCheck.position, (Vector3)groundCheckSize);
+        Gizmos.DrawWireCube(groundCheck.position, groundCheckSize);
     }
 }

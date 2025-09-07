@@ -918,6 +918,7 @@ GameObject:
   - component: {fileID: 1525849226}
   - component: {fileID: 1525849225}
   - component: {fileID: 1525849228}
+  - component: {fileID: 1525849229}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -955,6 +956,7 @@ MonoBehaviour:
   lockRadius: 50
   markerPrefab: {fileID: 188271124616822019, guid: e6591460a5294b44da3112413577ce30, type: 3}
   markerTint: {r: 0, g: 0, b: 0, a: 1}
+  lockAction: {fileID: -563488270697678168, guid: 27d70270c2e32c14da83dc4c4fa07a57, type: 3}
 --- !u!4 &1525849224
 Transform:
   m_ObjectHideFlags: 0
@@ -1068,6 +1070,7 @@ MonoBehaviour:
   lockRadius: 50
   markerPrefab: {fileID: 188271124616822019, guid: e6591460a5294b44da3112413577ce30, type: 3}
   markerTint: {r: 1, g: 0, b: 0, a: 1}
+  lockAction: {fileID: -8284063300383439895, guid: 27d70270c2e32c14da83dc4c4fa07a57, type: 3}
 --- !u!114 &1525849228
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1083,12 +1086,44 @@ MonoBehaviour:
   bodyRenderer: {fileID: 1299226921}
   bodyAnimator: {fileID: 1299226923}
   groundCheck: {fileID: 62665525}
-  groundCheckSize: {x: 0.28, y: 1}
+  groundCheckSize: {x: 0.28, y: 0.5}
   groundMask:
     serializedVersion: 2
     m_Bits: 64
   moveSpeed: 10
   jumpForce: 20
+  moveAction: {fileID: -9192141188265877022, guid: 27d70270c2e32c14da83dc4c4fa07a57, type: 3}
+  jumpAction: {fileID: -7853328751970741451, guid: 27d70270c2e32c14da83dc4c4fa07a57, type: 3}
+--- !u!114 &1525849229
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1525849222}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Actions: {fileID: -944628639613478452, guid: 27d70270c2e32c14da83dc4c4fa07a57, type: 3}
+  m_NotificationBehavior: 0
+  m_UIInputModule: {fileID: 0}
+  m_DeviceLostEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_DeviceRegainedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ControlsChangedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ActionEvents: []
+  m_NeverAutoSwitchControlSchemes: 0
+  m_DefaultControlScheme: 
+  m_DefaultActionMap: Gameplay
+  m_SplitScreenIndex: -1
+  m_Camera: {fileID: 0}
 --- !u!1 &1580079324
 GameObject:
   m_ObjectHideFlags: 0

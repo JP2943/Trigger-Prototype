@@ -32,6 +32,12 @@ public class ArmAimerSingle : MonoBehaviour
     Transform target; TargetMarker marker;
     Vector2 currentOffset; // 状態間をスムーズに補間
 
+    [Header("Input")]
+    public InputActionReference lockAction; // Gameplay/LockRight または LockLeft
+
+    void OnEnable() => lockAction?.action.Enable();
+    void OnDisable() => lockAction?.action.Disable();
+
     void Awake()
     {
         if (!bodyTransform && bodyRenderer) bodyTransform = bodyRenderer.transform;
@@ -60,8 +66,8 @@ public class ArmAimerSingle : MonoBehaviour
         if (bodyTransform) armPivot.position = bodyTransform.TransformPoint(local);
 
         // ------ 以下：既存のロックオン＆角度計算 ------
-        var kb = Keyboard.current;
-        if (kb != null && kb[lockKey].wasPressedThisFrame) ToggleLock();
+        if (lockAction && lockAction.action.WasPressedThisFrame())
+            ToggleLock();
 
         if (target)
         {
