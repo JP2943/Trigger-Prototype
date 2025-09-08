@@ -262,6 +262,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 308908538}
+  - component: {fileID: 308908539}
+  - component: {fileID: 308908540}
   m_Layer: 0
   m_Name: R_ArmPivot
   m_TagString: Untagged
@@ -286,6 +288,127 @@ Transform:
   - {fileID: 2119543601}
   m_Father: {fileID: 737142755}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &308908539
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 308908537}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b31d302df0cda8a438d65b63d84f4bdb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  armPivot: {fileID: 308908538}
+  muzzle: {fileID: 1952062437}
+  bodyRb: {fileID: 1525849226}
+  bulletPrefab: {fileID: 4441104389601224386, guid: 098b261cd07d69743a707e36a218eb38, type: 3}
+  fireAction: {fileID: 7013301044520726333, guid: 27d70270c2e32c14da83dc4c4fa07a57, type: 3}
+  allowMouseFallback: 1
+  fireCooldown: 0.5
+  bodyKickSpeed: 5
+  armKickDeg: 12
+  audioSource: {fileID: 308908540}
+  shotClip: {fileID: 8300000, guid: 6af80859f231106429d63fa70d715e6e, type: 3}
+  shotVolume: 0.9
+--- !u!82 &308908540
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 308908537}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
@@ -941,22 +1064,23 @@ MonoBehaviour:
   armPivot: {fileID: 308908538}
   bodyRenderer: {fileID: 1299226921}
   bodyTransform: {fileID: 1299226922}
+  bodyAnimator: {fileID: 1299226923}
   shoulderOffsetIdle: {x: 0.2, y: 0.85}
   shoulderOffsetWalk: {x: 0.2, y: 0.85}
   shoulderOffsetJump: {x: 0.1, y: 0.2}
   offsetLerpSpeed: 15
-  bodyAnimator: {fileID: 1299226923}
   speedParam: Speed
   airborneParam: Airborne
   armRenderer: {fileID: 2119543602}
   autoFlipYOnLeft: 1
   angleOffsetDeg: 0
-  lockKey: 20
+  lockAction: {fileID: -563488270697678168, guid: 27d70270c2e32c14da83dc4c4fa07a57, type: 3}
+  lockKeyFallback: 20
   targetTag: Enemy
   lockRadius: 50
   markerPrefab: {fileID: 188271124616822019, guid: e6591460a5294b44da3112413577ce30, type: 3}
   markerTint: {r: 0, g: 0, b: 0, a: 1}
-  lockAction: {fileID: -563488270697678168, guid: 27d70270c2e32c14da83dc4c4fa07a57, type: 3}
+  recoilRecoverDegPerSec: 600
 --- !u!4 &1525849224
 Transform:
   m_ObjectHideFlags: 0
@@ -965,7 +1089,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1525849222}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -2.344, y: -1.599, z: 0}
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
@@ -1055,22 +1179,23 @@ MonoBehaviour:
   armPivot: {fileID: 746636574}
   bodyRenderer: {fileID: 1299226921}
   bodyTransform: {fileID: 1299226922}
+  bodyAnimator: {fileID: 1299226923}
   shoulderOffsetIdle: {x: 0.2, y: 0.85}
   shoulderOffsetWalk: {x: 0.2, y: 0.85}
   shoulderOffsetJump: {x: 0.1, y: 0.2}
   offsetLerpSpeed: 15
-  bodyAnimator: {fileID: 1299226923}
   speedParam: Speed
   airborneParam: Airborne
   armRenderer: {fileID: 1000585647}
   autoFlipYOnLeft: 1
   angleOffsetDeg: 0
-  lockKey: 32
+  lockAction: {fileID: -8284063300383439895, guid: 27d70270c2e32c14da83dc4c4fa07a57, type: 3}
+  lockKeyFallback: 20
   targetTag: Enemy
   lockRadius: 50
   markerPrefab: {fileID: 188271124616822019, guid: e6591460a5294b44da3112413577ce30, type: 3}
   markerTint: {r: 1, g: 0, b: 0, a: 1}
-  lockAction: {fileID: -8284063300383439895, guid: 27d70270c2e32c14da83dc4c4fa07a57, type: 3}
+  recoilRecoverDegPerSec: 600
 --- !u!114 &1525849228
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1094,6 +1219,7 @@ MonoBehaviour:
   jumpForce: 20
   moveAction: {fileID: -9192141188265877022, guid: 27d70270c2e32c14da83dc4c4fa07a57, type: 3}
   jumpAction: {fileID: -7853328751970741451, guid: 27d70270c2e32c14da83dc4c4fa07a57, type: 3}
+  recoilReturn: 8
 --- !u!114 &1525849229
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1283,7 +1409,7 @@ Transform:
   m_GameObject: {fileID: 1952062436}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 2.096, y: -0.11, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1401,7 +1527,7 @@ Transform:
   m_GameObject: {fileID: 2125609305}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 2.041, y: 0.269, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

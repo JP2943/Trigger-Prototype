@@ -23,6 +23,9 @@ public class BodyLocomotion2D : MonoBehaviour
     static readonly int SpeedHash = Animator.StringToHash("Speed");
     static readonly int AirborneHash = Animator.StringToHash("Airborne");
 
+    [SerializeField] float recoilReturn = 8f; 
+    float recoilX;                             // ノックバックの一時速度
+
     Rigidbody2D rb;
     float inputX;
     int lastDir = 1;
@@ -62,10 +65,17 @@ public class BodyLocomotion2D : MonoBehaviour
         if (jumpAction && jumpAction.action.WasPressedThisFrame()) wantJump = true;
     }
 
+    // ノックバック付与（右向きに撃ったとき backDir は -armPivot.right）
+    public void AddRecoil(Vector2 backDir, float kickSpeed)
+    {
+        recoilX += backDir.x * kickSpeed; // 水平成分だけ足す（単位：速度）
+    }
+
     void FixedUpdate()
     {
+        recoilX = Mathf.MoveTowards(recoilX, 0f, recoilReturn * Time.fixedDeltaTime);
         Vector2 v = rb.linearVelocity;
-        v.x = inputX * moveSpeed;
+        v.x = inputX * moveSpeed + recoilX;
         rb.linearVelocity = v;
 
         if (wantJump && grounded)
