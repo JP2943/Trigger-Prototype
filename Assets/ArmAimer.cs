@@ -1,151 +1,155 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class ArmAimer : MonoBehaviour
 {
     [Header("Refs")]
-    [SerializeField] private Transform armPivot;            // ‰ñ“]‚Ì’†SiR_ArmPivot / L_ArmPivotj
-    [SerializeField] private SpriteRenderer bodyRenderer;   // ‘Ì‚ÌŒü‚«QÆiBody ‚Ì SRj
-    [SerializeField] private Transform bodyTransform;       // –¢İ’è‚È‚ç bodyRenderer.transform ‚ğg—p
-    [SerializeField] private Animator bodyAnimator;         // Body ‚Ì AnimatoriSpeed / Airborne ‚ğ“Ç‚Şj
+    [SerializeField] private Transform armPivot;
+    [SerializeField] private SpriteRenderer bodyRenderer;
+    [SerializeField] private Transform bodyTransform;
+    [SerializeField] private Animator bodyAnimator;
 
     [Header("Shoulder Offsets (Body local, right-facing)")]
     [SerializeField] private Vector2 shoulderOffsetIdle = new(0.20f, 0.85f);
     [SerializeField] private Vector2 shoulderOffsetWalk = new(0.20f, 0.85f);
     [SerializeField] private Vector2 shoulderOffsetJump = new(0.20f, 0.95f);
-    [SerializeField] private float offsetLerpSpeed = 15f;   // ƒIƒtƒZƒbƒgØ‘Ö‚ÌŠŠ‚ç‚©‚³
+    [SerializeField] private float offsetLerpSpeed = 15f;
 
-    [Header("Animator Params (names)")]
-    [SerializeField] private string speedParam = "Speed";       // float 0..1
-    [SerializeField] private string airborneParam = "Airborne"; // bool
-
-    [Header("Aim / Visual")]
-    [SerializeField] private SpriteRenderer armRenderer;    // ˜r‚ÌSRiflipY•â³‚Ég—pj
-    [SerializeField] private bool autoFlipYOnLeft = true;   // ¶‘¤‚ğŒü‚¢‚½‚ÉflipY‚ÅŒ©‚½–Ú•â³
-    [Tooltip("˜rƒXƒvƒ‰ƒCƒg‚ÌŠî€Œü‚«B‰EŒü‚«‚È‚ç 0A¶Œü‚«ŠG‚È‚ç 180B")]
-    [SerializeField] private float angleOffsetDeg = 0f;
-
-    [Header("Lock-on Input")]
-    public InputActionReference lockAction;                 // LB/RB ‚È‚Ç‚ğŠ„“–i•Ğ˜r‚²‚Æ‚Éj
-    [SerializeField] private Key lockKeyFallback = Key.F;   // InputAction–¢İ’è‚ÌƒtƒH[ƒ‹ƒoƒbƒNƒL[
-
-    [Header("Lock-on Settings")]
+    [Header("Aim")]
+    [SerializeField] private bool aimAtMouse = true;
     [SerializeField] private string targetTag = "Enemy";
-    [SerializeField] private float lockRadius = 50f;
+    [SerializeField] private float lockRadius = 8f;
+    public InputActionReference lockAction;
+    [SerializeField] private float angleOffsetDeg = 0f;
+    [SerializeField] private bool autoFlipYOnLeft = true;
 
     [Header("Target Marker")]
     [SerializeField] private TargetMarker markerPrefab;
     [SerializeField] private Color markerTint = Color.white;
 
     [Header("Recoil (added on top of aim angle)")]
-    [SerializeField] private float recoilRecoverDegPerSec = 600f; // 1•b‚ ‚½‚è–ß‚·Šp“x
+    [SerializeField] private float recoilRecoverDegPerSec = 60f;    // ç·šå½¢å¾©å¸°
+    [SerializeField] private bool useExponentialRecover = false;    // æŒ‡æ•°æ¸›è¡°ãƒˆã‚°ãƒ«
+    [SerializeField, Range(0f, 1f)] private float recoilDecayPerSecond = 0.2f;
 
-    // --------------- runtime state ---------------
+    [Header("Arm Sprite (optional)")]
+    [SerializeField] private SpriteRenderer armRenderer;
+
+    // å†…éƒ¨çŠ¶æ…‹
+    private Vector2 currentOffset;
+    private float recoilAngle = 0f;
     private Transform lockTarget;
     private TargetMarker marker;
-    private Vector2 currentOffset;
-    private float recoilAngle; // ˆê“I‚Èg˜r‚Ì’µ‚Ëã‚°Šph‚ğ‰ÁZ
 
-    private int speedHash;
-    private int airborneHash;
+    void Reset()
+    {
+        if (!bodyRenderer) bodyRenderer = GetComponentInParent<SpriteRenderer>();
+        if (!armPivot) armPivot = transform;
+    }
 
     void Awake()
     {
         if (!bodyTransform && bodyRenderer) bodyTransform = bodyRenderer.transform;
         currentOffset = shoulderOffsetIdle;
-        speedHash = Animator.StringToHash(speedParam);
-        airborneHash = Animator.StringToHash(airborneParam);
     }
 
-    void OnEnable() { lockAction?.action.Enable(); }
-    void OnDisable() { lockAction?.action.Disable(); }
-
-    void LateUpdate()
+    void Update()
     {
         if (!armPivot || !bodyRenderer) return;
 
-        // ---- 1) Œ¨ˆÊ’uFó‘Ô•ÊƒIƒtƒZƒbƒg‚ğ‘I‚ñ‚ÅAflipX ‚É‰‚¶‚Ä¶‰Eƒ~ƒ‰[ ----
-        Vector2 targetOffset = shoulderOffsetIdle;
+        // 1) è‚©ã‚ªãƒ•ã‚»ãƒƒãƒˆ
+        Vector2 to = shoulderOffsetIdle;
         if (bodyAnimator)
         {
-            bool airborne = bodyAnimator.GetBool(airborneHash);
-            float speed = bodyAnimator.GetFloat(speedHash);
-            if (airborne) targetOffset = shoulderOffsetJump;
-            else if (speed > 0.01f) targetOffset = shoulderOffsetWalk;
+            bool airborne = bodyAnimator.GetBool("Airborne");
+            float spd = bodyAnimator.GetFloat("Speed");
+            if (airborne) to = shoulderOffsetJump;
+            else if (spd > 0.01f) to = shoulderOffsetWalk;
         }
-        // ƒXƒ€[ƒY‚ÉØ‚è‘Ö‚¦
         float k = 1f - Mathf.Exp(-offsetLerpSpeed * Time.deltaTime);
-        currentOffset = Vector2.Lerp(currentOffset, targetOffset, k);
+        currentOffset = Vector2.Lerp(currentOffset, to, k);
 
-        // ‰EŒü‚«Šî€ƒIƒtƒZƒbƒg‚ğ flipX ‚É‡‚í‚¹‚Äƒ~ƒ‰[ ¨ ƒ[ƒ‹ƒhÀ•W‚Ö
         if (!bodyTransform) bodyTransform = bodyRenderer.transform;
         float ox = bodyRenderer.flipX ? -currentOffset.x : currentOffset.x;
         Vector3 local = new Vector3(ox, currentOffset.y, 0f);
         armPivot.position = bodyTransform.TransformPoint(local);
 
-        // ---- 2) “ü—ÍFƒƒbƒNƒIƒ“Ø‘ÖiInputAction or FallbackƒL[j ----
+        // 2) ãƒ­ãƒƒã‚¯ã‚ªãƒ³åˆ‡æ›¿
         bool toggle = false;
         if (lockAction) toggle = lockAction.action.WasPressedThisFrame();
-        else if (Keyboard.current != null) toggle = Keyboard.current[lockKeyFallback].wasPressedThisFrame;
+        else if (Keyboard.current != null && Keyboard.current.fKey.wasPressedThisFrame) toggle = true;
         if (toggle) ToggleLock();
 
-        // ---- 3) Æ€Špi–Ú•WŠp + ƒŠƒRƒCƒ‹Špj & flipY•â³ ----
+        // 3) ç…§æº–ï¼‹ãƒªã‚³ã‚¤ãƒ«è§’ã®åŠ ç®—
+        float ang;
         if (lockTarget)
         {
             Vector2 dir = (lockTarget.position - armPivot.position);
-            float ang = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg + angleOffsetDeg;
-            ang += recoilAngle; // šƒŠƒRƒCƒ‹‰ÁZ
-            armPivot.rotation = Quaternion.Euler(0, 0, ang);
-
-            if (armRenderer && autoFlipYOnLeft)
-            {
-                bool facingLeft = (ang > 90f || ang < -90f);
-                armRenderer.flipY = facingLeft;
-                armRenderer.flipX = false;
-            }
-
-            // ”ÍˆÍŠO/”jŠü‚Å‰ğœ
-            if (!lockTarget || dir.sqrMagnitude > lockRadius * lockRadius)
-                ClearLock();
+            ang = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg + angleOffsetDeg;
+        }
+        else if (aimAtMouse && Camera.main)
+        {
+            Vector3 mp = Mouse.current != null ? (Vector3)Mouse.current.position.ReadValue() : Input.mousePosition;
+            Vector3 world = Camera.main.ScreenToWorldPoint(mp);
+            Vector2 dir = (world - armPivot.position);
+            ang = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg + angleOffsetDeg;
         }
         else
         {
-            float baseAng = bodyRenderer.flipX ? 180f : 0f;
-            float ang = baseAng + angleOffsetDeg + recoilAngle; // šƒŠƒRƒCƒ‹‰ÁZ
-            armPivot.rotation = Quaternion.Euler(0, 0, ang);
-
-            if (armRenderer && autoFlipYOnLeft)
-            {
-                bool facingLeft = (ang > 90f || ang < -90f);
-                armRenderer.flipY = facingLeft;
-                armRenderer.flipX = false;
-            }
+            ang = (bodyRenderer.flipX ? 180f : 0f) + angleOffsetDeg;
         }
 
-        // ---- 4) ƒŠƒRƒCƒ‹Šp‚ğ™X‚É0‚Ö–ß‚· ----
-        recoilAngle = Mathf.MoveTowards(recoilAngle, 0f, recoilRecoverDegPerSec * Time.deltaTime);
+        ang += recoilAngle;
+        armPivot.rotation = Quaternion.Euler(0, 0, ang);
+
+        if (armRenderer && autoFlipYOnLeft)
+        {
+            bool facingLeft = (ang > 90f || ang < -90f);
+            armRenderer.flipY = facingLeft;
+            armRenderer.flipX = false;
+        }
+
+        // 4) ãƒªã‚³ã‚¤ãƒ«å¾©å¸°
+        if (useExponentialRecover)
+        {
+            float kExp = Mathf.Pow(recoilDecayPerSecond, Time.deltaTime);
+            recoilAngle *= kExp;
+        }
+        else
+        {
+            recoilAngle = Mathf.MoveTowards(recoilAngle, 0f, recoilRecoverDegPerSec * Time.deltaTime);
+        }
     }
 
-    // ============== Public API (Gun2D ‚©‚çŒÄ‚Ô) ==============
+    // --- å¤–éƒ¨APIï¼ˆè§’åº¦ã‚’ãã®ã¾ã¾è¶³ã™ï¼‰ ---
     public void AddRecoilAngle(float deg)
     {
-        recoilAngle += deg; // —áF‘åŒûŒa‚È‚ç -10`-16 ‚È‚Ç‚ğ‘«‚·
+        recoilAngle += deg;
     }
 
-    // ============== Lock-on helpers ==============
+    // --- å¤–éƒ¨APIï¼ˆå¸¸ã«â€œç”»é¢ã®ä¸Šæ–¹å‘â€ã¸è·³ã­ä¸Šã’ã‚‹ï¼‰ ---
+    public void AddRecoilUpwards(float deg)
+    {
+        if (!armPivot) return;
+        // Zè§’ï¼ˆ-180ã€œ180ï¼‰ã‚’åŸºæº–ã«å·¦å‘ãåˆ¤å®š
+        float z = Mathf.DeltaAngle(0f, armPivot.eulerAngles.z);
+        bool facingLeft = (z > 90f || z < -90f);
+        // å·¦å‘ãï¼æ™‚è¨ˆå›ã‚Š(è² è§’)ãŒä¸Šã€å³å‘ãï¼åæ™‚è¨ˆå›ã‚Š(æ­£è§’)ãŒä¸Š
+        recoilAngle += facingLeft ? -Mathf.Abs(deg) : +Mathf.Abs(deg);
+    }
+
+    // --- Lock on helpers ---
     void ToggleLock()
     {
         if (lockTarget) { ClearLock(); return; }
-
         Transform nearest = null;
         float best = lockRadius * lockRadius;
         foreach (var e in GameObject.FindGameObjectsWithTag(targetTag))
         {
             float d2 = (e.transform.position - armPivot.position).sqrMagnitude;
-            if (d2 < best) { best = d2; nearest = e.transform; }
+            if (d2 <= best) { best = d2; nearest = e.transform; }
         }
         lockTarget = nearest;
-
         if (lockTarget && markerPrefab)
         {
             if (!marker) marker = Instantiate(markerPrefab);
@@ -160,15 +164,13 @@ public class ArmAimer : MonoBehaviour
         if (marker) { Destroy(marker.gameObject); marker = null; }
     }
 
-    // ‹ŠoƒfƒoƒbƒOi‘I‘ğ‚ÉŒ¨ˆÊ’u‚ğ•\¦j
     void OnDrawGizmosSelected()
     {
         if (!bodyRenderer) return;
         if (!bodyTransform) bodyTransform = bodyRenderer.transform;
-
         Vector2 use = Application.isPlaying ? currentOffset : shoulderOffsetIdle;
-        float ox = (bodyRenderer.flipX ? -use.x : use.x);
-        Vector3 p = bodyTransform.TransformPoint(new Vector3(ox, use.y, 0f));
+        float ox2 = (bodyRenderer.flipX ? -use.x : use.x);
+        Vector3 p = bodyTransform.TransformPoint(new Vector3(ox2, use.y, 0f));
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(p, 0.045f);
     }

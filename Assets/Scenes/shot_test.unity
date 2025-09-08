@@ -264,6 +264,7 @@ GameObject:
   - component: {fileID: 308908538}
   - component: {fileID: 308908539}
   - component: {fileID: 308908540}
+  - component: {fileID: 308908541}
   m_Layer: 0
   m_Name: R_ArmPivot
   m_TagString: Untagged
@@ -308,10 +309,11 @@ MonoBehaviour:
   allowMouseFallback: 1
   fireCooldown: 0.5
   bodyKickSpeed: 5
-  armKickDeg: 12
+  armKickDeg: 50
   audioSource: {fileID: 308908540}
   shotClip: {fileID: 8300000, guid: 6af80859f231106429d63fa70d715e6e, type: 3}
   shotVolume: 0.9
+  aimer: {fileID: 308908541}
 --- !u!82 &308908540
 AudioSource:
   m_ObjectHideFlags: 0
@@ -409,6 +411,38 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &308908541
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 308908537}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aafe724005611a84b8bd946afd9f34be, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ArmAimerSingle
+  armPivot: {fileID: 308908538}
+  bodyRenderer: {fileID: 1299226921}
+  bodyTransform: {fileID: 1299226922}
+  bodyAnimator: {fileID: 1299226923}
+  shoulderOffsetIdle: {x: 0.2, y: 0.85}
+  shoulderOffsetWalk: {x: 0.2, y: 0.85}
+  shoulderOffsetJump: {x: 0.1, y: 0.2}
+  offsetLerpSpeed: 15
+  aimAtMouse: 0
+  targetTag: Enemy
+  lockRadius: 50
+  lockAction: {fileID: -563488270697678168, guid: 27d70270c2e32c14da83dc4c4fa07a57, type: 3}
+  angleOffsetDeg: 0
+  autoFlipYOnLeft: 1
+  markerPrefab: {fileID: 188271124616822019, guid: e6591460a5294b44da3112413577ce30, type: 3}
+  markerTint: {r: 1, g: 0, b: 0, a: 1}
+  recoilRecoverDegPerSec: 40
+  useExponentialRecover: 0
+  recoilDecayPerSecond: 0.2
+  armRenderer: {fileID: 2119543602}
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
@@ -671,6 +705,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 746636574}
+  - component: {fileID: 746636575}
   m_Layer: 0
   m_Name: ArmPivot
   m_TagString: Untagged
@@ -695,6 +730,38 @@ Transform:
   - {fileID: 2125609306}
   m_Father: {fileID: 1157134038}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &746636575
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 746636573}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aafe724005611a84b8bd946afd9f34be, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  armPivot: {fileID: 746636574}
+  bodyRenderer: {fileID: 1299226921}
+  bodyTransform: {fileID: 1299226922}
+  bodyAnimator: {fileID: 1299226923}
+  shoulderOffsetIdle: {x: 0.2, y: 0.85}
+  shoulderOffsetWalk: {x: 0.2, y: 0.85}
+  shoulderOffsetJump: {x: 0.1, y: 0.2}
+  offsetLerpSpeed: 15
+  aimAtMouse: 0
+  targetTag: Enemy
+  lockRadius: 8
+  lockAction: {fileID: -8284063300383439895, guid: 27d70270c2e32c14da83dc4c4fa07a57, type: 3}
+  angleOffsetDeg: 0
+  autoFlipYOnLeft: 1
+  markerPrefab: {fileID: 188271124616822019, guid: e6591460a5294b44da3112413577ce30, type: 3}
+  markerTint: {r: 1, g: 1, b: 1, a: 1}
+  recoilRecoverDegPerSec: 60
+  useExponentialRecover: 0
+  recoilDecayPerSecond: 0.2
+  armRenderer: {fileID: 1000585647}
 --- !u!1 &1000585645
 GameObject:
   m_ObjectHideFlags: 0
@@ -1036,8 +1103,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1525849224}
-  - component: {fileID: 1525849223}
-  - component: {fileID: 1525849227}
   - component: {fileID: 1525849226}
   - component: {fileID: 1525849225}
   - component: {fileID: 1525849228}
@@ -1049,38 +1114,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1525849223
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1525849222}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aafe724005611a84b8bd946afd9f34be, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ArmAimer
-  armPivot: {fileID: 308908538}
-  bodyRenderer: {fileID: 1299226921}
-  bodyTransform: {fileID: 1299226922}
-  bodyAnimator: {fileID: 1299226923}
-  shoulderOffsetIdle: {x: 0.2, y: 0.85}
-  shoulderOffsetWalk: {x: 0.2, y: 0.85}
-  shoulderOffsetJump: {x: 0.1, y: 0.2}
-  offsetLerpSpeed: 15
-  speedParam: Speed
-  airborneParam: Airborne
-  armRenderer: {fileID: 2119543602}
-  autoFlipYOnLeft: 1
-  angleOffsetDeg: 0
-  lockAction: {fileID: -563488270697678168, guid: 27d70270c2e32c14da83dc4c4fa07a57, type: 3}
-  lockKeyFallback: 20
-  targetTag: Enemy
-  lockRadius: 50
-  markerPrefab: {fileID: 188271124616822019, guid: e6591460a5294b44da3112413577ce30, type: 3}
-  markerTint: {r: 0, g: 0, b: 0, a: 1}
-  recoilRecoverDegPerSec: 600
 --- !u!4 &1525849224
 Transform:
   m_ObjectHideFlags: 0
@@ -1164,38 +1197,6 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
---- !u!114 &1525849227
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1525849222}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aafe724005611a84b8bd946afd9f34be, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ArmAimerSingle
-  armPivot: {fileID: 746636574}
-  bodyRenderer: {fileID: 1299226921}
-  bodyTransform: {fileID: 1299226922}
-  bodyAnimator: {fileID: 1299226923}
-  shoulderOffsetIdle: {x: 0.2, y: 0.85}
-  shoulderOffsetWalk: {x: 0.2, y: 0.85}
-  shoulderOffsetJump: {x: 0.1, y: 0.2}
-  offsetLerpSpeed: 15
-  speedParam: Speed
-  airborneParam: Airborne
-  armRenderer: {fileID: 1000585647}
-  autoFlipYOnLeft: 1
-  angleOffsetDeg: 0
-  lockAction: {fileID: -8284063300383439895, guid: 27d70270c2e32c14da83dc4c4fa07a57, type: 3}
-  lockKeyFallback: 20
-  targetTag: Enemy
-  lockRadius: 50
-  markerPrefab: {fileID: 188271124616822019, guid: e6591460a5294b44da3112413577ce30, type: 3}
-  markerTint: {r: 1, g: 0, b: 0, a: 1}
-  recoilRecoverDegPerSec: 600
 --- !u!114 &1525849228
 MonoBehaviour:
   m_ObjectHideFlags: 0

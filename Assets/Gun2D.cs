@@ -5,45 +5,43 @@ using UnityEngine.InputSystem;
 public class Gun2D : MonoBehaviour
 {
     [Header("Refs")]
-    [SerializeField] private Transform armPivot;          // 例: R_ArmPivot / L_ArmPivot（このスクリプトはArmPivotに付けるのが基本）
-    [SerializeField] private Transform muzzle;            // 例: R_Muzzle / L_Muzzle（ローカル+Xが銃口方向）
-    [SerializeField] private Rigidbody2D bodyRb;          // Player本体のRigidbody2D
-    [SerializeField] private Bullet2D bulletPrefab;       // 弾プレハブ
+    [SerializeField] private Transform armPivot;
+    [SerializeField] private Transform muzzle;
+    [SerializeField] private Rigidbody2D bodyRb;
+    [SerializeField] private Bullet2D bulletPrefab;
 
     [Header("Input (RT)")]
-    public InputActionReference fireAction;               // PlayerControls.Gameplay/Fire（<Gamepad>/rightTrigger）
-    [SerializeField] private bool allowMouseFallback = true; // テスト用：マウス左でも撃てる
+    public InputActionReference fireAction;
+    [SerializeField] private bool allowMouseFallback = true;
 
     [Header("Fire")]
-    [SerializeField] private float fireCooldown = 0.18f;  // 連射間隔(秒)
+    [SerializeField] private float fireCooldown = 0.18f;
 
     [Header("Recoil")]
-    [SerializeField] private float bodyKickSpeed = 2.5f;  // 体へ与える“追加速度”量（移動に合成）
-    [SerializeField] private float armKickDeg = 12f;    // 腕の跳ね上げ角（-方向に足すのが自然）
+    [SerializeField] private float bodyKickSpeed = 2.5f;
+    [SerializeField] private float armKickDeg = 14f;  // ← 正の値（上方向に跳ね上げる“強さ”）
 
     [Header("SFX")]
-    [SerializeField] private AudioSource audioSource;     // ArmPivotに付けたAudioSource（2D推奨）
-    [SerializeField] private AudioClip shotClip;          // 発射音
-    [SerializeField] private float shotVolume = 0.9f;
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip shotClip;
+    [SerializeField, Range(0f, 1f)] private float shotVolume = 0.9f;
 
-    // ---- runtime ----
-    private float nextFireTime;
-    private BodyLocomotion2D locomotion;  // 体ノックバック用（あれば使用）
-    private ArmAimer aimer;               // 腕キック角用（あれば使用）
+    [SerializeField] private ArmAimer aimer;
+
+    private float nextFireAt;
+    private BodyLocomotion2D locomotion;
 
     void Awake()
     {
         if (!audioSource) audioSource = GetComponent<AudioSource>();
-        if (bodyRb)
-        {
-            locomotion = bodyRb.GetComponent<BodyLocomotion2D>();
-        }
-        if (armPivot)
-        {
-            // ArmAimer が ArmPivot 側に付いている想定。別オブジェクトにある場合はInspectorで差し替えを
-            aimer = armPivot.GetComponent<ArmAimer>();
-            if (!aimer) aimer = GetComponent<ArmAimer>();
-        }
+        if (bodyRb) locomotion = bodyRb.GetComponent<BodyLocomotion2D>();
+
+        // ArmAimer 自動解決（手動割当でもOK）
+        if (!aimer && armPivot) aimer = armPivot.GetComponent<ArmAimer>();
+        if (!aimer && armPivot) aimer = armPivot.GetComponentInChildren<ArmAimer>(true);
+        if (!aimer && armPivot) aimer = armPivot.GetComponentInParent<ArmAimer>();
+        if (!aimer) aimer = GetComponentInParent<ArmAimer>();
+        if (!aimer) aimer = GetComponentInChildren<ArmAimer>(true);
     }
 
     void OnEnable() { fireAction?.action.Enable(); }
@@ -52,43 +50,39 @@ public class Gun2D : MonoBehaviour
     void Update()
     {
         bool pressed = false;
-
-        if (fireAction != null)
-            pressed = fireAction.action.WasPressedThisFrame();
-
+        if (fireAction != null) pressed = fireAction.action.WasPressedThisFrame();
         if (!pressed && allowMouseFallback && Mouse.current != null)
             pressed = Mouse.current.leftButton.wasPressedThisFrame;
-
         if (pressed) TryFire();
     }
 
-    public void TryFire()
+    void TryFire()
     {
-        if (Time.time < nextFireTime) return;
-        nextFireTime = Time.time + fireCooldown;
+        if (Time.time < nextFireAt) return;
+        if (!muzzle || !bulletPrefab) return;
 
-        // 1) 弾の生成（muzzle位置 / armPivot向き）
-        if (bulletPrefab && muzzle && armPivot)
-            Instantiate(bulletPrefab, muzzle.position, armPivot.rotation);
+        nextFireAt = Time.time + fireCooldown;
 
-        // 2) 体ノックバック（移動に合成） or 物理インパルス
-        if (armPivot)
+        // 1) 弾生成
+        Instantiate(bulletPrefab, muzzle.position, muzzle.rotation);
+
+        // 2) 体ノックバック
+        if (locomotion != null)
         {
-            Vector2 back = -(Vector2)armPivot.right;
-
-            if (locomotion != null)
-            {
-                locomotion.AddRecoil(back, bodyKickSpeed); // 推奨（移動と合成）
-            }
-            else if (bodyRb != null)
-            {
-                bodyRb.AddForce(back * bodyKickSpeed, ForceMode2D.Impulse); // フォールバック
-            }
+            Vector2 back = -muzzle.right;
+            locomotion.AddRecoil(back, bodyKickSpeed);
+        }
+        else if (bodyRb != null)
+        {
+            Vector2 back = -muzzle.right * bodyKickSpeed;
+            bodyRb.AddForce(back, ForceMode2D.Impulse);
         }
 
-        // 3) 腕キック角（Aimer 側で最終角に加算＆自動リカバー）
+        // 3) 腕リコイル（常に“画面上方向”へ）
         if (aimer != null)
-            aimer.AddRecoilAngle(-Mathf.Abs(armKickDeg)); // マイナス方向へ跳ね上げ
+        {
+            aimer.AddRecoilUpwards(armKickDeg);  // ← 符号は自動で決定
+        }
 
         // 4) 発射音
         if (shotClip)
@@ -103,12 +97,11 @@ public class Gun2D : MonoBehaviour
         }
     }
 
-    // 便利: インスペクタで参照漏れがあれば警告
     void OnValidate()
     {
-        if (armPivot == null) Debug.LogWarning("[Gun2D] armPivot が未設定です。ArmPivotに本スクリプトを付け、armPivotに自分を割り当ててください。", this);
-        if (muzzle == null) Debug.LogWarning("[Gun2D] muzzle が未設定です。ArmPivotの子にMuzzle(銃口)を作成して割り当ててください。", this);
-        if (bulletPrefab == null) Debug.LogWarning("[Gun2D] bulletPrefab が未設定です。弾のプレハブを割り当ててください。", this);
-        if (bodyRb == null) Debug.LogWarning("[Gun2D] bodyRb が未設定です。PlayerのRigidbody2Dを割り当ててください。", this);
+        if (!armPivot) Debug.LogWarning("[Gun2D] armPivot 未設定", this);
+        if (!muzzle) Debug.LogWarning("[Gun2D] muzzle 未設定", this);
+        if (!bulletPrefab) Debug.LogWarning("[Gun2D] bulletPrefab 未設定", this);
+        if (!bodyRb) Debug.LogWarning("[Gun2D] bodyRb 未設定", this);
     }
 }
