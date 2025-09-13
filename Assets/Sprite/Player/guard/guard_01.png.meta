@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: d5102a4d136f9e04ab4c519f86884cf9
+guid: e0c3ccf23f7b044469257abcda8b2c4a
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 2779023822413464520
-    second: stand_0
+      213: -1076941987602556009
+    second: guard_01_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -126,23 +126,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: stand_0
+      name: guard_01_0
       rect:
         serializedVersion: 2
         x: 0
-        y: 13
-        width: 225
-        height: 530
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+        y: 38
+        width: 359
+        height: 472
+      alignment: 9
+      pivot: {x: 0.5, y: 0.55}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 8c38d4d4173119620800000000000000
-      internalID: 2779023822413464520
+      spriteID: 79b1f39d7feed01f0800000000000000
+      internalID: -1076941987602556009
       vertices: []
       indices: 
       edges: []
@@ -151,7 +151,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 7591cfa32dc1a0948ae9d52330a1840c
+    spriteID: 47dd56aaaa2e70549ac1b316ec80a532
     internalID: 0
     vertices: []
     indices: 
@@ -161,7 +161,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      stand_0: 2779023822413464520
+      guard_01_0: -1076941987602556009
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

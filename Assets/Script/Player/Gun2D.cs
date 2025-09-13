@@ -28,6 +28,10 @@ public class Gun2D : MonoBehaviour
 
     [SerializeField] private ArmAimer aimer;
 
+    [Header("Block")]
+    [SerializeField] private PlayerHealthGuard guardRef;
+
+
     private float nextFireAt;
     private BodyLocomotion2D locomotion;
 
@@ -49,6 +53,8 @@ public class Gun2D : MonoBehaviour
 
     void Update()
     {
+        // ƒK[ƒh’†‚Í”­Ëˆ—‚É“ü‚ç‚È‚¢
+        if (guardRef && guardRef.IsGuarding) return;
         bool pressed = false;
         if (fireAction != null) pressed = fireAction.action.WasPressedThisFrame();
         if (!pressed && allowMouseFallback && Mouse.current != null)

@@ -12,6 +12,10 @@ public class BodyLocomotion2D : MonoBehaviour
     [SerializeField] private Vector2 groundCheckSize = new(0.28f, 0.06f);
     [SerializeField] private LayerMask groundMask;
 
+    [Header("Blockers")]
+    [SerializeField] private PlayerHealthGuard guardRef;
+    [SerializeField] private float guardStopDecel = 40f;
+
     [Header("Move/Jump")]
     [SerializeField] private float moveSpeed = 2.8f;
     [SerializeField] private float jumpForce = 6.0f;
@@ -49,9 +53,8 @@ public class BodyLocomotion2D : MonoBehaviour
 
     void Update()
     {
-        // 1D Axis を読む（-1 ～ 1）
-        float x = moveAction ? moveAction.action.ReadValue<float>() : 0f;
-        // デッドゾーン処理（十字キーなのでガタつきは少ないが保険）
+        bool guarding = guardRef && guardRef.IsGuarding; // 1D Axis（-1〜1）を読む。ただしガード中は0固定
+        float x = (moveAction && !guarding) ? moveAction.action.ReadValue<float>() : 0f;
         inputX = Mathf.Abs(x) < 0.1f ? 0f : Mathf.Sign(x);
 
         if (inputX != 0) lastDir = (int)Mathf.Sign(inputX);
@@ -59,10 +62,10 @@ public class BodyLocomotion2D : MonoBehaviour
 
         grounded = IsGrounded();
         bodyAnimator.SetBool(AirborneHash, !grounded);
-        bodyAnimator.SetFloat(SpeedHash, Mathf.Abs(inputX));
+        bodyAnimator.SetFloat(SpeedHash, guarding ? 0f : Mathf.Abs(inputX));
 
-        // B（buttonEast）が押された瞬間を検出
-        if (jumpAction && jumpAction.action.WasPressedThisFrame()) wantJump = true;
+        if (!guarding && jumpAction && jumpAction.action.WasPressedThisFrame())
+            wantJump = true;
     }
 
     // ノックバック付与（右向きに撃ったとき backDir は -armPivot.right）
@@ -75,10 +78,19 @@ public class BodyLocomotion2D : MonoBehaviour
     {
         recoilX = Mathf.MoveTowards(recoilX, 0f, recoilReturn * Time.fixedDeltaTime);
         Vector2 v = rb.linearVelocity;
-        v.x = inputX * moveSpeed + recoilX;
-        rb.linearVelocity = v;
+        bool guarding = guardRef && guardRef.IsGuarding;
+        if (guarding)
+        {
+            // ガード中：X速度を素早く0へ収束（重力はそのまま、外部の縦方向は維持）
+            v.x = Mathf.MoveTowards(v.x, 0f, guardStopDecel * Time.fixedDeltaTime);
+        }
+        else
+        {
+            v.x = inputX * moveSpeed + recoilX;
+        }
+            rb.linearVelocity = v;
 
-        if (wantJump && grounded)
+        if (!guarding && wantJump && grounded)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
             rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);

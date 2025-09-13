@@ -45,6 +45,9 @@ public class Gun2DLeftEnergy : MonoBehaviour
     [SerializeField] private AudioClip overheatClip;    // 任意（オーバーヒートになった瞬間）
     [SerializeField, Range(0f, 1f)] private float shotVolume = 0.9f;
 
+    [Header("Block")]
+    [SerializeField] private PlayerHealthGuard guardRef;
+
     // 内部状態
     private float _nextFireAt;
     private float _regenBlockedUntil;
@@ -69,40 +72,49 @@ public class Gun2DLeftEnergy : MonoBehaviour
 
     void Update()
     {
-        // 入力（押しっぱなし対応）
-        bool pressed = false;
-        if (fireAction != null) pressed = fireAction.action.IsPressed();
-        if (!pressed && allowMouseFallback && Mouse.current != null)
-            pressed = Mouse.current.rightButton.isPressed;
-
-        // オーバーヒート解除
-        if (_overheat && Time.time >= _overheatUntil)
-            _overheat = false;
-
-        // 発射
-        if (pressed && Time.time >= _nextFireAt && !_overheat)
+        // ガード中は一切撃たない（押しっぱなし判定も無視）
+        if (guardRef && guardRef.IsGuarding)
         {
-            if (energy >= shotCost && bulletPrefab && muzzle)
+            // ただし左腕エネルギーの回復は継続したいので、発射だけ禁止。
+            // pressedはfalseのまま扱う。
+        }
+        else
+        {
+            // 入力（押しっぱなし対応）
+            bool pressed = false;
+            if (fireAction != null) pressed = fireAction.action.IsPressed();
+            if (!pressed && allowMouseFallback && Mouse.current != null)
+                pressed = Mouse.current.rightButton.isPressed;
+
+            // オーバーヒート解除
+            if (_overheat && Time.time >= _overheatUntil)
+                _overheat = false;
+
+            // 発射
+            if (pressed && Time.time >= _nextFireAt && !_overheat)
             {
-                FireOnce();
-            }
-            else
-            {
-                // 弾切れ → オーバーヒート開始
-                if (useOverheat && !_overheat)
+                if (energy >= shotCost && bulletPrefab && muzzle)
                 {
-                    StartOverheat();
+                    FireOnce();
+                }
+                else
+                {
+                    // 弾切れ → オーバーヒート開始
+                    if (useOverheat && !_overheat)
+                    {
+                        StartOverheat();
+                    }
                 }
             }
-        }
 
-        // 回復（非発射時、一定遅延後／オーバーヒート中は設定次第）
-        bool canRegen = !pressed && Time.time >= _regenBlockedUntil;
-        if (_overheat && regenerateDuringOverheat) canRegen = true;
+            // 回復（非発射時、一定遅延後／オーバーヒート中は設定次第）
+            bool canRegen = !pressed && Time.time >= _regenBlockedUntil;
+            if (_overheat && regenerateDuringOverheat) canRegen = true;
 
-        if (canRegen && energy < energyMax)
-        {
-            energy = Mathf.Min(energyMax, energy + regenPerSecond * Time.deltaTime);
+            if (canRegen && energy < energyMax)
+            {
+                energy = Mathf.Min(energyMax, energy + regenPerSecond * Time.deltaTime);
+            }
         }
     }
 
