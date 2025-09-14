@@ -10,23 +10,26 @@ public class Bullet2D : MonoBehaviour
 
     [Header("Damage")]
     [SerializeField] int damage = 6;
-    [SerializeField, Tooltip("この弾をガードされたときに消費させたいスタミナ量")]
-    float guardStaminaCost = 8f;
+    [SerializeField] float guardStaminaCost = 8f;
+
+    [Header("Flags")]
+    [SerializeField, Tooltip("trueにすると被弾スタンも発生する弾になる")]
+    bool causeStun = false;                 // ← デフォルトは「のけぞらない」
+    [SerializeField] float stunSeconds = 0.15f;
+    [SerializeField] Vector2 knockback = new(2.5f, 1.2f);
 
     Rigidbody2D rb;
 
     void Awake() { rb = GetComponent<Rigidbody2D>(); }
-
     void OnEnable()
     {
         rb.gravityScale = 0f;
-        rb.linearVelocity = (Vector2)(transform.right * speed); // ローカル+Xへ
+        rb.linearVelocity = (Vector2)(transform.right * speed);
         Destroy(gameObject, lifeTime);
     }
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        // レイヤーで味方間衝突を切っておくのが前提（Player弾がPlayerに当たらないように）
         if (other.TryGetComponent<IHittable>(out var h))
         {
             Vector2 p = transform.position;
@@ -35,6 +38,9 @@ public class Bullet2D : MonoBehaviour
             {
                 damage = damage,
                 guardStaminaCost = guardStaminaCost,
+                causeStun = causeStun,
+                stunSeconds = stunSeconds,
+                knockback = knockback,
                 hitPoint = p,
                 hitNormal = n,
                 source = gameObject

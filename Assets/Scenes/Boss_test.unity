@@ -1648,10 +1648,13 @@ MonoBehaviour:
   stamina: 100
   staminaRegenPerSec: 20
   regenDelayAfterGuardHit: 0.25
+  defaultStunSeconds: 0.22
+  defaultKnockback: {x: 5, y: 2}
+  iFrameSeconds: 0.3
   bodyRenderer: {fileID: 1209679744}
-  guardSprite: {fileID: 0}
   bodyAnimator: {fileID: 1209679742}
   guardBoolParam: Guard
+  hurtBoolParam: Hurt
 --- !u!114 &687344918
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2417,7 +2420,7 @@ Transform:
   m_GameObject: {fileID: 1494712302}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0, y: -0.017, z: -0.010604858}
+  m_LocalPosition: {x: -0, y: -0.017, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2473,6 +2476,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   damage: 10
   guardStaminaCost: 25
+  causeStun: 1
+  stunSeconds: 0.22
+  knockback: {x: 20, y: 2}
   targetMask:
     serializedVersion: 2
     m_Bits: 8

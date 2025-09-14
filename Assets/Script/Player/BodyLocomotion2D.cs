@@ -53,7 +53,7 @@ public class BodyLocomotion2D : MonoBehaviour
 
     void Update()
     {
-        bool guarding = guardRef && guardRef.IsGuarding; // 1D Axis（-1〜1）を読む。ただしガード中は0固定
+        bool guarding = guardRef && (guardRef.IsGuarding || guardRef.IsHurt); // 1D Axis（-1〜1）を読む。ただしガード中は0固定
         float x = (moveAction && !guarding) ? moveAction.action.ReadValue<float>() : 0f;
         inputX = Mathf.Abs(x) < 0.1f ? 0f : Mathf.Sign(x);
 
