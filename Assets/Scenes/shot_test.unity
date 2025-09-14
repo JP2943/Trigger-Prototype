@@ -161,8 +161,9 @@ GameObject:
   - component: {fileID: 205334417}
   - component: {fileID: 205334416}
   - component: {fileID: 205334418}
-  m_Layer: 0
-  m_Name: Target_01
+  - component: {fileID: 205334419}
+  m_Layer: 9
+  m_Name: Enemy_TestShooter
   m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -235,7 +236,8 @@ Transform:
   m_LocalPosition: {x: 1.64, y: -0.9, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1373863283}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &205334418
@@ -253,6 +255,26 @@ MonoBehaviour:
   amplitude: 2
   frequency: 0.5
   phaseOffset: 0
+--- !u!114 &205334419
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 205334415}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad6b518405c113d459d014fbb4589e0d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  muzzle: {fileID: 1373863283}
+  bulletPrefab: {fileID: 6118960251604555615, guid: 993e425804f25f24ba1a4351f6bafbf7, type: 3}
+  target: {fileID: 1525849224}
+  targetTag: Player
+  firstDelay: 0.5
+  fireInterval: 1.2
+  spreadDeg: 0
+  aimContinuously: 1
 --- !u!1 &301691379
 GameObject:
   m_ObjectHideFlags: 0
@@ -1785,6 +1807,37 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!1 &1373863282
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1373863283}
+  m_Layer: 9
+  m_Name: Muzzle
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1373863283
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1373863282}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.45, y: -0.28, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 205334417}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1525849222
 GameObject:
   m_ObjectHideFlags: 0

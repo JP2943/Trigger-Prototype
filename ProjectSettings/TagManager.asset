@@ -14,10 +14,10 @@ TagManager:
   - Water
   - UI
   - Ground
-  - 
-  - 
-  - 
-  - 
+  - EnemyBullet
+  - PlayerBullet
+  - Enemy
+  - EnemyAttack
   - 
   - 
   - 
