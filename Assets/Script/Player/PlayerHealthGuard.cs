@@ -37,9 +37,11 @@ public class PlayerHealthGuard : MonoBehaviour, IHittable
     // 状態
     public bool IsGuarding { get; private set; }
     public bool IsHurt { get; private set; }
+    public bool IsDashing { get; private set; }
     public float HP01 => Mathf.Clamp01(hp / (float)maxHP);
     public float Stamina01 => Mathf.Clamp01(stamina / maxStamina);
-
+   
+   
     Rigidbody2D rb;
     float _regenBlockedUntil;
     float _iFrameUntil;
@@ -77,10 +79,26 @@ public class PlayerHealthGuard : MonoBehaviour, IHittable
             stamina = Mathf.Min(maxStamina, stamina + staminaRegenPerSec * Time.deltaTime);
     }
 
+    // スタミナ消費API（public）
+    public bool TrySpendStamina(float amount)
+    {
+        if (amount <= 0f) return true;
+        if (stamina < amount) return false;
+        stamina -= amount;
+        return true;
+    }
+
+    // ダッシュの開始/終了から呼ぶ（無敵も付与）
+    public void SetDashing(bool on, float iframeSeconds = 0f)
+    {
+        IsDashing = on;
+        if (on && iframeSeconds > 0f)
+            _iFrameUntil = Mathf.Max(_iFrameUntil, Time.time + iframeSeconds);
+    }
     public void ReceiveHit(in HitInfo hit)
     {
         // 無敵中または既に被弾モーション中は無視
-        if (IsHurt || Time.time < _iFrameUntil) return;
+        if (IsHurt || IsDashing || Time.time < _iFrameUntil) return;
 
         if (IsGuarding)
         {

@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UIElements.Experimental;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Rigidbody2D))]
@@ -28,7 +29,7 @@ public class BodyLocomotion2D : MonoBehaviour
     static readonly int SpeedHash = Animator.StringToHash("Speed");
     static readonly int AirborneHash = Animator.StringToHash("Airborne");
 
-    [SerializeField] float recoilReturn = 8f; 
+    [SerializeField] float recoilReturn = 8f;
     float recoilX;                             // ノックバックの一時速度
 
     Rigidbody2D rb;
@@ -56,7 +57,10 @@ public class BodyLocomotion2D : MonoBehaviour
     {
         bool guarding = guardRef && guardRef.IsGuarding;
         bool hurt = guardRef && guardRef.IsHurt;
-        float x = (moveAction && !guarding && !hurt) ? moveAction.action.ReadValue<float>() : 0f;
+        bool dashing = guardRef && guardRef.IsDashing;
+
+        // 入力（ダッシュ/ガード/被弾中は0固定）
+        float x = (moveAction && !guarding && !hurt && !dashing) ? moveAction.action.ReadValue<float>() : 0f;
         inputX = Mathf.Abs(x) < 0.1f ? 0f : Mathf.Sign(x);
 
         if (inputX != 0) lastDir = (int)Mathf.Sign(inputX);
@@ -64,9 +68,9 @@ public class BodyLocomotion2D : MonoBehaviour
 
         grounded = IsGrounded();
         bodyAnimator.SetBool(AirborneHash, !grounded);
-        bodyAnimator.SetFloat(SpeedHash, (guarding || hurt) ? 0f : Mathf.Abs(inputX));
+        bodyAnimator.SetFloat(SpeedHash, (guarding || hurt || dashing) ? 0f : Mathf.Abs(inputX));
 
-        if (!guarding && !hurt && jumpAction && jumpAction.action.WasPressedThisFrame())
+        if (!guarding && !hurt && !dashing && jumpAction && jumpAction.action.WasPressedThisFrame())
             wantJump = true;
     }
 
@@ -80,8 +84,11 @@ public class BodyLocomotion2D : MonoBehaviour
     {
         recoilX = Mathf.MoveTowards(recoilX, 0f, recoilReturn * Time.fixedDeltaTime);
         Vector2 v = rb.linearVelocity;
+
         bool guarding = guardRef && guardRef.IsGuarding;
         bool hurt = guardRef && guardRef.IsHurt;
+        bool dashing = guardRef && guardRef.IsDashing; // ← ここで再計算（修正点）
+
         if (guarding)
         {
             // ガード中：X速度を素早く0へ収束（重力はそのまま、外部の縦方向は維持）
@@ -92,13 +99,17 @@ public class BodyLocomotion2D : MonoBehaviour
             // 被弾中：AddForceで付けたノックバックを維持しつつ、ゆっくり減衰
             v.x = Mathf.MoveTowards(v.x, 0f, hurtSlideDecel * Time.fixedDeltaTime);
         }
+        else if (dashing)
+        {
+            // ダッシュ中：速度は PlayerDash 側で管理。ここでは上書きしない。
+        }
         else
-            {
+        {
             v.x = inputX * moveSpeed + recoilX;
         }
-            rb.linearVelocity = v;
+        rb.linearVelocity = v;
 
-        if (!guarding && !hurt && wantJump && grounded)
+        if (!guarding && !hurt && !dashing && wantJump && grounded)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
             rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
