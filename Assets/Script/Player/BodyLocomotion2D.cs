@@ -15,6 +15,7 @@ public class BodyLocomotion2D : MonoBehaviour
     [Header("Blockers")]
     [SerializeField] private PlayerHealthGuard guardRef;
     [SerializeField] private float guardStopDecel = 40f;
+    [SerializeField] private float hurtSlideDecel = 6f;
 
     [Header("Move/Jump")]
     [SerializeField] private float moveSpeed = 2.8f;
@@ -53,8 +54,9 @@ public class BodyLocomotion2D : MonoBehaviour
 
     void Update()
     {
-        bool guarding = guardRef && (guardRef.IsGuarding || guardRef.IsHurt); // 1D Axis（-1〜1）を読む。ただしガード中は0固定
-        float x = (moveAction && !guarding) ? moveAction.action.ReadValue<float>() : 0f;
+        bool guarding = guardRef && guardRef.IsGuarding;
+        bool hurt = guardRef && guardRef.IsHurt;
+        float x = (moveAction && !guarding && !hurt) ? moveAction.action.ReadValue<float>() : 0f;
         inputX = Mathf.Abs(x) < 0.1f ? 0f : Mathf.Sign(x);
 
         if (inputX != 0) lastDir = (int)Mathf.Sign(inputX);
@@ -62,9 +64,9 @@ public class BodyLocomotion2D : MonoBehaviour
 
         grounded = IsGrounded();
         bodyAnimator.SetBool(AirborneHash, !grounded);
-        bodyAnimator.SetFloat(SpeedHash, guarding ? 0f : Mathf.Abs(inputX));
+        bodyAnimator.SetFloat(SpeedHash, (guarding || hurt) ? 0f : Mathf.Abs(inputX));
 
-        if (!guarding && jumpAction && jumpAction.action.WasPressedThisFrame())
+        if (!guarding && !hurt && jumpAction && jumpAction.action.WasPressedThisFrame())
             wantJump = true;
     }
 
@@ -79,18 +81,24 @@ public class BodyLocomotion2D : MonoBehaviour
         recoilX = Mathf.MoveTowards(recoilX, 0f, recoilReturn * Time.fixedDeltaTime);
         Vector2 v = rb.linearVelocity;
         bool guarding = guardRef && guardRef.IsGuarding;
+        bool hurt = guardRef && guardRef.IsHurt;
         if (guarding)
         {
             // ガード中：X速度を素早く0へ収束（重力はそのまま、外部の縦方向は維持）
             v.x = Mathf.MoveTowards(v.x, 0f, guardStopDecel * Time.fixedDeltaTime);
         }
-        else
+        else if (hurt)
         {
+            // 被弾中：AddForceで付けたノックバックを維持しつつ、ゆっくり減衰
+            v.x = Mathf.MoveTowards(v.x, 0f, hurtSlideDecel * Time.fixedDeltaTime);
+        }
+        else
+            {
             v.x = inputX * moveSpeed + recoilX;
         }
             rb.linearVelocity = v;
 
-        if (!guarding && wantJump && grounded)
+        if (!guarding && !hurt && wantJump && grounded)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
             rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
