@@ -54,7 +54,7 @@ public class Gun2D : MonoBehaviour
     void Update()
     {
         // ƒK[ƒh’†‚Í”­Ëˆ—‚É“ü‚ç‚È‚¢
-        if (guardRef && (guardRef.IsGuarding || guardRef.IsHurt)) return;
+        if (guardRef && (guardRef.IsGuarding || guardRef.IsHurt || guardRef.IsDashing || guardRef.IsDead)) return;
         bool pressed = false;
         if (fireAction != null) pressed = fireAction.action.WasPressedThisFrame();
         if (!pressed && allowMouseFallback && Mouse.current != null)

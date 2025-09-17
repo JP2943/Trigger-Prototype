@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Rigidbody2D))]
@@ -11,7 +12,7 @@ public class PlayerHealthGuard : MonoBehaviour, IHittable
     [SerializeField] private int hp = 100;
 
     [Header("Guard")]
-    public InputActionReference guardAction; // Gameplay/Guard。未設定なら G キー
+    public InputActionReference guardAction;
     [SerializeField, Range(0f, 1f)] private float guardDamageMultiplier = 0.1f;
 
     [Header("Stamina")]
@@ -21,27 +22,29 @@ public class PlayerHealthGuard : MonoBehaviour, IHittable
     [SerializeField] private float regenDelayAfterGuardHit = 0.25f;
 
     [Header("Hurt/Stun")]
-    [SerializeField, Tooltip("攻撃側が値を送ってこない場合の既定スタン秒")]
-    private float defaultStunSeconds = 0.22f;
-    [SerializeField, Tooltip("攻撃方向に応じた±で適用される横衝撃と、上向き衝撃")]
-    private Vector2 defaultKnockback = new Vector2(5.0f, 2.0f);
-    [SerializeField, Tooltip("被弾モーション中の無敵時間（連続被弾防止）")]
-    private float iFrameSeconds = 0.30f;
+    [SerializeField] private float defaultStunSeconds = 0.22f;
+    [SerializeField] private Vector2 defaultKnockback = new(5.0f, 2.0f);
+    [SerializeField] private float iFrameSeconds = 0.30f;
 
-    [Header("Visual (optional)")]
+    [Header("Visual/Animator")]
     [SerializeField] private SpriteRenderer bodyRenderer;
     [SerializeField] private Animator bodyAnimator;
     [SerializeField] private string guardBoolParam = "Guard";
-    [SerializeField] private string hurtBoolParam = "Hurt"; // Animator の Hurt(bool)
+    [SerializeField] private string hurtBoolParam = "Hurt";
+    [SerializeField] private string deadBoolParam = "Dead";   // ← 追加：死亡遷移用
 
-    // 状態
+    [Header("Death Flow")]
+    [SerializeField] private DeathUI deathUI;                 // YOU DIED の演出（次の手順で作成）
+    [SerializeField] private float reloadDelayAfterText = 0.5f;
+
     public bool IsGuarding { get; private set; }
     public bool IsHurt { get; private set; }
-    public bool IsDashing { get; private set; }
+    public bool IsDashing { get; private set; }  // ダッシュ連携用
+    public bool IsDead { get; private set; }  // ← 追加
+
     public float HP01 => Mathf.Clamp01(hp / (float)maxHP);
     public float Stamina01 => Mathf.Clamp01(stamina / maxStamina);
-   
-   
+
     Rigidbody2D rb;
     float _regenBlockedUntil;
     float _iFrameUntil;
@@ -62,11 +65,10 @@ public class PlayerHealthGuard : MonoBehaviour, IHittable
 
     void Update()
     {
-        // 入力（未設定なら Keyboard.G）
+        if (IsDead) return;
+
         bool pressed = guardAction ? guardAction.action.IsPressed()
                                    : (Keyboard.current != null && Keyboard.current.gKey.isPressed);
-
-        // 被弾中は行動不能＝ガード入力も無効化（見た目もOFF）
         bool guardingNow = (!IsHurt) && pressed;
         if (guardingNow != IsGuarding)
         {
@@ -74,12 +76,11 @@ public class PlayerHealthGuard : MonoBehaviour, IHittable
             if (bodyAnimator) bodyAnimator.SetBool(guardBoolParam, IsGuarding);
         }
 
-        // スタミナ回復
         if (Time.time >= _regenBlockedUntil && stamina < maxStamina)
             stamina = Mathf.Min(maxStamina, stamina + staminaRegenPerSec * Time.deltaTime);
     }
 
-    // スタミナ消費API（public）
+    // 外部API：スタミナ消費
     public bool TrySpendStamina(float amount)
     {
         if (amount <= 0f) return true;
@@ -87,18 +88,17 @@ public class PlayerHealthGuard : MonoBehaviour, IHittable
         stamina -= amount;
         return true;
     }
-
-    // ダッシュの開始/終了から呼ぶ（無敵も付与）
+    // 外部API：ダッシュのオン/オフ（無敵も付加）
     public void SetDashing(bool on, float iframeSeconds = 0f)
     {
         IsDashing = on;
         if (on && iframeSeconds > 0f)
             _iFrameUntil = Mathf.Max(_iFrameUntil, Time.time + iframeSeconds);
     }
+
     public void ReceiveHit(in HitInfo hit)
     {
-        // 無敵中または既に被弾モーション中は無視
-        if (IsHurt || IsDashing || Time.time < _iFrameUntil) return;
+        if (IsDead || IsHurt || IsDashing || Time.time < _iFrameUntil) return;
 
         if (IsGuarding)
         {
@@ -106,27 +106,20 @@ public class PlayerHealthGuard : MonoBehaviour, IHittable
             stamina = Mathf.Max(0f, stamina - hit.guardStaminaCost);
             _regenBlockedUntil = Time.time + regenDelayAfterGuardHit;
             ApplyDamage(dmg);
-            return; // ガード中はのけぞらない
+            return;
         }
 
-        // 非ガード：ダメージ適用
         ApplyDamage(hit.damage);
-
-        // 死亡時の演出は今後実装
         if (hp <= 0) return;
 
-        // のけぞり（攻撃ごとに可/不可）
         if (hit.causeStun)
         {
             float stun = (hit.stunSeconds > 0f) ? hit.stunSeconds : defaultStunSeconds;
-
-            // ノックバック：攻撃→自分の方向(hitNormal)のX符号に合わせる
             float sgn = Mathf.Sign(hit.hitNormal.x == 0 ? 1 : hit.hitNormal.x);
             Vector2 kb = new Vector2(
                 (hit.knockback.x != 0 ? hit.knockback.x : defaultKnockback.x) * sgn,
                 (hit.knockback.y != 0 ? hit.knockback.y : defaultKnockback.y)
             );
-
             StartCoroutine(HurtRoutine(stun, kb));
         }
     }
@@ -136,28 +129,61 @@ public class PlayerHealthGuard : MonoBehaviour, IHittable
         IsHurt = true;
         _iFrameUntil = Time.time + iFrameSeconds;
 
-        // 見た目：Hurt ステートへ
         if (bodyAnimator) bodyAnimator.SetBool(hurtBoolParam, true);
 
-        // ノックバック：横移動を止めてから衝撃
         rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
         rb.AddForce(knockbackImpulse, ForceMode2D.Impulse);
 
         yield return new WaitForSeconds(stunSeconds);
 
-        // 復帰
         IsHurt = false;
         if (bodyAnimator) bodyAnimator.SetBool(hurtBoolParam, false);
     }
 
     public void ApplyDamage(int amount)
     {
+        if (IsDead) return;
         if (amount <= 0) return;
+
         hp = Mathf.Max(0, hp - amount);
-        if (hp <= 0)
+        if (hp <= 0) Die();
+    }
+
+    void Die()
+    {
+        if (IsDead) return;
+        IsDead = true;
+
+        // すべての行動フラグを落とす＆無敵固定
+        IsGuarding = false;
+        IsHurt = false;
+        IsDashing = false;
+        _iFrameUntil = float.PositiveInfinity;
+
+        // Animator：Deadへ
+        if (bodyAnimator)
         {
-            // TODO: 死亡演出
-            Debug.Log("[PlayerHealthGuard] Player died.");
+            bodyAnimator.SetBool(guardBoolParam, false);
+            bodyAnimator.SetBool(hurtBoolParam, false);
+            bodyAnimator.SetBool(deadBoolParam, true); // AnyState→Down へ
+
+            bodyAnimator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            bodyAnimator.updateMode = AnimatorUpdateMode.UnscaledTime; // timeScale 0でも動く
+            bodyAnimator.CrossFadeInFixedTime("Down", 0f, 0, 0f);       // そのフレーム頭出し再生
+        }
+
+        // YOU DIED → リロード
+        StartCoroutine(DeathSequence());
+    }
+
+    IEnumerator DeathSequence()
+    {
+        if (deathUI) yield return deathUI.PlayAndReload(reloadDelayAfterText);
+        else
+        {
+            // フォールバック：少し待ってリロード
+            yield return new WaitForSeconds(1.2f + reloadDelayAfterText);
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
     }
 }

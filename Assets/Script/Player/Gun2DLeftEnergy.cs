@@ -73,7 +73,7 @@ public class Gun2DLeftEnergy : MonoBehaviour
     void Update()
     {
         // ガード中は一切撃たない（押しっぱなし判定も無視）
-        if (guardRef && guardRef.IsGuarding)
+        if (guardRef && (guardRef.IsGuarding || guardRef.IsHurt || guardRef.IsDashing || guardRef.IsDead)) 
         {
             // ただし左腕エネルギーの回復は継続したいので、発射だけ禁止。
             // pressedはfalseのまま扱う。

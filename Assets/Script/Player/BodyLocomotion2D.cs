@@ -58,9 +58,10 @@ public class BodyLocomotion2D : MonoBehaviour
         bool guarding = guardRef && guardRef.IsGuarding;
         bool hurt = guardRef && guardRef.IsHurt;
         bool dashing = guardRef && guardRef.IsDashing;
+        bool dead = guardRef && guardRef.IsDead;
 
         // 入力（ダッシュ/ガード/被弾中は0固定）
-        float x = (moveAction && !guarding && !hurt && !dashing) ? moveAction.action.ReadValue<float>() : 0f;
+        float x = (moveAction && !guarding && !hurt && !dashing && !dead) ? moveAction.action.ReadValue<float>() : 0f;
         inputX = Mathf.Abs(x) < 0.1f ? 0f : Mathf.Sign(x);
 
         if (inputX != 0) lastDir = (int)Mathf.Sign(inputX);
@@ -68,9 +69,12 @@ public class BodyLocomotion2D : MonoBehaviour
 
         grounded = IsGrounded();
         bodyAnimator.SetBool(AirborneHash, !grounded);
-        bodyAnimator.SetFloat(SpeedHash, (guarding || hurt || dashing) ? 0f : Mathf.Abs(inputX));
+        bodyAnimator.SetFloat(SpeedHash, (guarding || hurt || dashing || dead) ? 0f : Mathf.Abs(inputX));
+        if (!dead)
+            bodyAnimator.SetFloat(SpeedHash, (guarding || hurt || dashing) ? 0f : Mathf.Abs(inputX));
 
-        if (!guarding && !hurt && !dashing && jumpAction && jumpAction.action.WasPressedThisFrame())
+
+        if (!guarding && !hurt && !dashing && !dead && jumpAction && jumpAction.action.WasPressedThisFrame())
             wantJump = true;
     }
 
