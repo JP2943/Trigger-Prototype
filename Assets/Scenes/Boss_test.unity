@@ -534,6 +534,7 @@ GameObject:
   - component: {fileID: 242862907}
   - component: {fileID: 242862906}
   - component: {fileID: 242862905}
+  - component: {fileID: 242862908}
   m_Layer: 3
   m_Name: R_ArmPivot
   m_TagString: Untagged
@@ -694,7 +695,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 242862903}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b31d302df0cda8a438d65b63d84f4bdb, type: 3}
   m_Name: 
@@ -712,6 +713,40 @@ MonoBehaviour:
   shotClip: {fileID: 8300000, guid: 6af80859f231106429d63fa70d715e6e, type: 3}
   shotVolume: 0.9
   aimer: {fileID: 242862905}
+  guardRef: {fileID: 687344917}
+--- !u!114 &242862908
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 242862903}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: afd29ddb61059964fb38e3b1f95a7b2e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  armPivot: {fileID: 551694056}
+  muzzle: {fileID: 394395502}
+  bodyRb: {fileID: 687344921}
+  normalBullet: {fileID: 4441104389601224386, guid: 098b261cd07d69743a707e36a218eb38, type: 3}
+  chargedBullet: {fileID: 1024007385228328617, guid: 02db2b95c8fd0af4e9fcbb7ca4a4ec02, type: 3}
+  aimer: {fileID: 242862905}
+  fireAction: {fileID: 7013301044520726333, guid: 27d70270c2e32c14da83dc4c4fa07a57, type: 3}
+  allowMouseFallback: 1
+  chargeSeconds: 1.5
+  normalCooldown: 0.18
+  chargedCooldown: 0.35
+  bodyKickSpeed_Normal: 2.5
+  armKickDeg_Normal: 14
+  bodyKickSpeed_Charged: 5.5
+  armKickDeg_Charged: 28
+  audioSource: {fileID: 242862906}
+  sfxChargeStart: {fileID: 0}
+  sfxChargeLoop: {fileID: 0}
+  sfxFireNormal: {fileID: 8300000, guid: 6af80859f231106429d63fa70d715e6e, type: 3}
+  sfxFireCharged: {fileID: 8300000, guid: 6af80859f231106429d63fa70d715e6e, type: 3}
+  shotVolume: 0.9
   guardRef: {fileID: 687344917}
 --- !u!1 &289218553
 GameObject:
