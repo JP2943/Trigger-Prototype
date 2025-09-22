@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 7497330161594078849}
   - component: {fileID: 9036985604758086717}
   - component: {fileID: 4441104389601224386}
-  m_Layer: 3
+  m_Layer: 8
   m_Name: Bullet
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -179,3 +179,6 @@ MonoBehaviour:
   lifeTime: 3
   damage: 6
   guardStaminaCost: 8
+  causeStun: 0
+  stunSeconds: 0.15
+  knockback: {x: 2.5, y: 1.2}

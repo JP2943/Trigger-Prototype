@@ -18,8 +18,8 @@ TagManager:
   - PlayerBullet
   - Enemy
   - EnemyAttack
-  - 
-  - 
+  - Foreground
+  - BossHead
   - 
   - 
   - 
