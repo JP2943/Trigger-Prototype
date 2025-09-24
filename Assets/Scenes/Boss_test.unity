@@ -809,7 +809,7 @@ MonoBehaviour:
   sfxChargeStart: {fileID: 0}
   sfxChargeLoop: {fileID: 0}
   sfxFireNormal: {fileID: 8300000, guid: 6af80859f231106429d63fa70d715e6e, type: 3}
-  sfxFireCharged: {fileID: 8300000, guid: 6af80859f231106429d63fa70d715e6e, type: 3}
+  sfxFireCharged: {fileID: 8300000, guid: fbc4bd8f5f0bd0b489848a492a47af16, type: 3}
   shotVolume: 0.9
 --- !u!1 &289218553
 GameObject:
@@ -1824,6 +1824,7 @@ GameObject:
   - component: {fileID: 687344917}
   - component: {fileID: 687344916}
   - component: {fileID: 687344923}
+  - component: {fileID: 687344924}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -1876,6 +1877,7 @@ MonoBehaviour:
   deadBoolParam: Dead
   deathUI: {fileID: 72387255}
   reloadDelayAfterText: 0.5
+  justGuardHandler: {fileID: 0}
 --- !u!114 &687344918
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2039,6 +2041,37 @@ MonoBehaviour:
   dashBoolParam: Dash
   enemyLayerName: Enemy
   enemyAttackLayerName: EnemyAttack
+--- !u!114 &687344924
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 687344915}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ede8340bbbdae9243ad3f02b25c3f0a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  guardProvider: {fileID: 687344917}
+  guardAction: {fileID: -6132880700869767621, guid: 27d70270c2e32c14da83dc4c4fa07a57, type: 3}
+  justGuardFrames: 5
+  baseFps: 60
+  justGuardVfxPrefab: {fileID: 3691352156638903711, guid: 039c1405c9e6a52448867299dfe5fc05, type: 3}
+  vfxAnchor: {fileID: 1209679743}
+  vfxLocalOffset: {x: 0, y: -2.5, z: 0}
+  vfxScale: 3
+  vfxSortingLayer: Foreground
+  vfxOrderInLayer: 1200
+  vfxPlaybackSeconds: 0.05
+  fitFullCycleToPlayback: 0
+  manualSpeedScale: 10
+  forceNoLoop: 1
+  destroyGrace: 0.1
+  vfxAlpha: 0.2
+  applyAlphaToMaterials: 1
+  justGuardSe: {fileID: 8300000, guid: bf28c6febd67ddc479466df869f5b1ff, type: 3}
+  audioSource: {fileID: 0}
 --- !u!1 &689300816
 GameObject:
   m_ObjectHideFlags: 0

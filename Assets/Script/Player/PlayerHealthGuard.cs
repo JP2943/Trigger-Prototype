@@ -31,16 +31,19 @@ public class PlayerHealthGuard : MonoBehaviour, IHittable
     [SerializeField] private Animator bodyAnimator;
     [SerializeField] private string guardBoolParam = "Guard";
     [SerializeField] private string hurtBoolParam = "Hurt";
-    [SerializeField] private string deadBoolParam = "Dead";   // ← 追加：死亡遷移用
+    [SerializeField] private string deadBoolParam = "Dead";
 
     [Header("Death Flow")]
-    [SerializeField] private DeathUI deathUI;                 // YOU DIED の演出（次の手順で作成）
+    [SerializeField] private DeathUI deathUI;
     [SerializeField] private float reloadDelayAfterText = 0.5f;
+
+    [Header("Just Guard")] // ★★ 追加
+    [SerializeField] private JustGuardHandler justGuardHandler; // ★★ 追加：同一オブジェクトに付けたコンポを参照
 
     public bool IsGuarding { get; private set; }
     public bool IsHurt { get; private set; }
-    public bool IsDashing { get; private set; }  // ダッシュ連携用
-    public bool IsDead { get; private set; }  // ← 追加
+    public bool IsDashing { get; private set; }
+    public bool IsDead { get; private set; }
 
     public float HP01 => Mathf.Clamp01(hp / (float)maxHP);
     public float Stamina01 => Mathf.Clamp01(stamina / maxStamina);
@@ -58,6 +61,8 @@ public class PlayerHealthGuard : MonoBehaviour, IHittable
         if (bodyRenderer) _cachedSprite = bodyRenderer.sprite;
         hp = Mathf.Clamp(hp, 0, maxHP);
         stamina = Mathf.Clamp(stamina, 0, maxStamina);
+
+        if (!justGuardHandler) justGuardHandler = GetComponent<JustGuardHandler>(); // ★★ 追加：自動取得
     }
 
     void OnEnable() { guardAction?.action.Enable(); }
@@ -88,6 +93,7 @@ public class PlayerHealthGuard : MonoBehaviour, IHittable
         stamina -= amount;
         return true;
     }
+
     // 外部API：ダッシュのオン/オフ（無敵も付加）
     public void SetDashing(bool on, float iframeSeconds = 0f)
     {
@@ -100,27 +106,45 @@ public class PlayerHealthGuard : MonoBehaviour, IHittable
     {
         if (IsDead || IsHurt || IsDashing || Time.time < _iFrameUntil) return;
 
-        if (IsGuarding)
+        // まず「このヒットで想定される値」をローカルに計算しておく
+        int hpDamage = hit.damage;
+        int staminaCost = Mathf.Max(0, Mathf.RoundToInt(hit.guardStaminaCost));
+
+        // ノックバック（符号は当たり方向で決定）
+        float sgn = Mathf.Sign(hit.hitNormal.x == 0 ? 1 : hit.hitNormal.x);
+        Vector2 wouldKnockback = new Vector2(
+            (hit.knockback.x != 0 ? hit.knockback.x : defaultKnockback.x) * sgn,
+            (hit.knockback.y != 0 ? hit.knockback.y : defaultKnockback.y)
+        );
+
+        // ★★ 追加：ジャストガード判定（押下から5F以内なら完全無効）
+        if (justGuardHandler != null &&
+            justGuardHandler.TryApplyJustGuard(ref hpDamage, ref staminaCost, ref wouldKnockback))
         {
-            int dmg = Mathf.CeilToInt(hit.damage * guardDamageMultiplier);
-            stamina = Mathf.Max(0f, stamina - hit.guardStaminaCost);
-            _regenBlockedUntil = Time.time + regenDelayAfterGuardHit;
-            ApplyDamage(dmg);
+            // 完全防御：HP/スタミナ/ノックバックすべて 0。以降の処理は何もせず終了。
             return;
         }
 
-        ApplyDamage(hit.damage);
+        // ここから通常のガード/被弾処理
+        if (IsGuarding)
+        {
+            int reduced = Mathf.CeilToInt(hpDamage * guardDamageMultiplier);
+            stamina = Mathf.Max(0f, stamina - staminaCost);
+            _regenBlockedUntil = Time.time + regenDelayAfterGuardHit;
+            ApplyDamage(reduced);
+            return;
+        }
+
+        // 非ガード時
+        ApplyDamage(hpDamage);
         if (hp <= 0) return;
 
         if (hit.causeStun)
         {
             float stun = (hit.stunSeconds > 0f) ? hit.stunSeconds : defaultStunSeconds;
-            float sgn = Mathf.Sign(hit.hitNormal.x == 0 ? 1 : hit.hitNormal.x);
-            Vector2 kb = new Vector2(
-                (hit.knockback.x != 0 ? hit.knockback.x : defaultKnockback.x) * sgn,
-                (hit.knockback.y != 0 ? hit.knockback.y : defaultKnockback.y)
-            );
-            StartCoroutine(HurtRoutine(stun, kb));
+
+            // さきほど計算したノックバックを適用
+            StartCoroutine(HurtRoutine(stun, wouldKnockback));
         }
     }
 
