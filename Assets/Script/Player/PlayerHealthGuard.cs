@@ -1,4 +1,4 @@
-using System.Collections;
+ï»¿using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -37,8 +37,8 @@ public class PlayerHealthGuard : MonoBehaviour, IHittable
     [SerializeField] private DeathUI deathUI;
     [SerializeField] private float reloadDelayAfterText = 0.5f;
 
-    [Header("Just Guard")] // šš ’Ç‰Á
-    [SerializeField] private JustGuardHandler justGuardHandler; // šš ’Ç‰ÁF“¯ˆêƒIƒuƒWƒFƒNƒg‚É•t‚¯‚½ƒRƒ“ƒ|‚ğQÆ
+    [Header("Just Guard")]
+    [SerializeField] private JustGuardHandler justGuardHandler; // åŒä¸€ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆæ¨å¥¨
 
     public bool IsGuarding { get; private set; }
     public bool IsHurt { get; private set; }
@@ -62,7 +62,7 @@ public class PlayerHealthGuard : MonoBehaviour, IHittable
         hp = Mathf.Clamp(hp, 0, maxHP);
         stamina = Mathf.Clamp(stamina, 0, maxStamina);
 
-        if (!justGuardHandler) justGuardHandler = GetComponent<JustGuardHandler>(); // šš ’Ç‰ÁF©“®æ“¾
+        if (!justGuardHandler) justGuardHandler = GetComponent<JustGuardHandler>();
     }
 
     void OnEnable() { guardAction?.action.Enable(); }
@@ -85,7 +85,7 @@ public class PlayerHealthGuard : MonoBehaviour, IHittable
             stamina = Mathf.Min(maxStamina, stamina + staminaRegenPerSec * Time.deltaTime);
     }
 
-    // ŠO•”APIFƒXƒ^ƒ~ƒiÁ”ï
+    // å¤–éƒ¨APIï¼šã‚¹ã‚¿ãƒŸãƒŠæ¶ˆè²»
     public bool TrySpendStamina(float amount)
     {
         if (amount <= 0f) return true;
@@ -94,7 +94,7 @@ public class PlayerHealthGuard : MonoBehaviour, IHittable
         return true;
     }
 
-    // ŠO•”APIFƒ_ƒbƒVƒ…‚ÌƒIƒ“/ƒIƒti–³“G‚à•t‰Áj
+    // å¤–éƒ¨APIï¼šãƒ€ãƒƒã‚·ãƒ¥ã®ã‚ªãƒ³/ã‚ªãƒ•ï¼ˆç„¡æ•µã‚‚ä»˜åŠ ï¼‰
     public void SetDashing(bool on, float iframeSeconds = 0f)
     {
         IsDashing = on;
@@ -102,50 +102,84 @@ public class PlayerHealthGuard : MonoBehaviour, IHittable
             _iFrameUntil = Mathf.Max(_iFrameUntil, Time.time + iframeSeconds);
     }
 
+    // ---- ãƒ’ãƒƒãƒˆå—ä»˜ï¼ˆæ”»æ’ƒå´ã® HitInfo ä»•æ§˜ã«ä¾å­˜ã—ãªã„ãŸã‚ã€optional ãƒ•ãƒ©ã‚°ã¯åå°„ã§èª­ã‚€ï¼‰ ----
     public void ReceiveHit(in HitInfo hit)
     {
         if (IsDead || IsHurt || IsDashing || Time.time < _iFrameUntil) return;
 
-        // ‚Ü‚¸u‚±‚Ìƒqƒbƒg‚Å‘z’è‚³‚ê‚é’lv‚ğƒ[ƒJƒ‹‚ÉŒvZ‚µ‚Ä‚¨‚­
-        int hpDamage = hit.damage;
+        // ã¾ãšã€Œã“ã®ãƒ’ãƒƒãƒˆã§æƒ³å®šã•ã‚Œã‚‹å€¤ã€ã‚’ãƒ­ãƒ¼ã‚«ãƒ«ã«è¨ˆç®—
+        int hpDamage = hit.damage; // HitInfo ã¯æ—¢å­˜é€šã‚Š int ã‚’æƒ³å®š
         int staminaCost = Mathf.Max(0, Mathf.RoundToInt(hit.guardStaminaCost));
 
-        // ƒmƒbƒNƒoƒbƒNi•„†‚Í“–‚½‚è•ûŒü‚ÅŒˆ’èj
+        // ãƒãƒƒã‚¯ãƒãƒƒã‚¯ï¼ˆç¬¦å·ã¯å½“ãŸã‚Šæ–¹å‘ã§æ±ºå®šï¼‰
         float sgn = Mathf.Sign(hit.hitNormal.x == 0 ? 1 : hit.hitNormal.x);
         Vector2 wouldKnockback = new Vector2(
             (hit.knockback.x != 0 ? hit.knockback.x : defaultKnockback.x) * sgn,
             (hit.knockback.y != 0 ? hit.knockback.y : defaultKnockback.y)
         );
 
-        // šš ’Ç‰ÁFƒWƒƒƒXƒgƒK[ƒh”»’èi‰Ÿ‰º‚©‚ç5FˆÈ“à‚È‚çŠ®‘S–³Œøj
-        if (justGuardHandler != null &&
+        // --- å¯å¤‰ãƒ•ãƒ©ã‚°ï¼ˆã‚ã‚Œã°èª­ã‚€ãƒ»ãªã‘ã‚Œã°æ—¢å®šï¼‰ ---
+        bool unblockable = GetOptionalBoolFlag(hit, "unblockable", false);
+        bool justGuardable = GetOptionalBoolFlag(hit, "justGuardable", true);
+
+        // â˜… ã‚¸ãƒ£ã‚¹ãƒˆã‚¬ãƒ¼ãƒ‰ï¼ˆæŠ¼ä¸‹ã‹ã‚‰5Fä»¥å†…ï¼‰â€”â€” justGuardable ã®æ™‚ã®ã¿æˆç«‹
+        if (justGuardable && justGuardHandler != null &&
             justGuardHandler.TryApplyJustGuard(ref hpDamage, ref staminaCost, ref wouldKnockback))
         {
-            // Š®‘S–hŒäFHP/ƒXƒ^ƒ~ƒi/ƒmƒbƒNƒoƒbƒN‚·‚×‚Ä 0BˆÈ~‚Ìˆ—‚Í‰½‚à‚¹‚¸I—¹B
+            // å®Œå…¨é˜²å¾¡ï¼šHP/ã‚¹ã‚¿ãƒŸãƒŠ/ãƒãƒƒã‚¯ãƒãƒƒã‚¯ã™ã¹ã¦ 0ã€‚ä»¥é™ã®å‡¦ç†ã¯ä½•ã‚‚ã›ãšçµ‚äº†ã€‚
             return;
         }
 
-        // ‚±‚±‚©‚ç’Êí‚ÌƒK[ƒh/”í’eˆ—
+        // ã“ã“ã‹ã‚‰é€šå¸¸ã®ã‚¬ãƒ¼ãƒ‰/è¢«å¼¾å‡¦ç†
         if (IsGuarding)
         {
-            int reduced = Mathf.CeilToInt(hpDamage * guardDamageMultiplier);
-            stamina = Mathf.Max(0f, stamina - staminaCost);
-            _regenBlockedUntil = Time.time + regenDelayAfterGuardHit;
-            ApplyDamage(reduced);
-            return;
+            if (unblockable)
+            {
+                // ã‚¬ãƒ¼ãƒ‰ä¸èƒ½ï¼šé€šå¸¸è¢«å¼¾æ‰±ã„ï¼ˆè»½æ¸›ã—ãªã„ï¼‰
+                ApplyDamage(hpDamage);
+                if (hp <= 0) return;
+
+                if (hit.causeStun)
+                {
+                    float stun = (hit.stunSeconds > 0f) ? hit.stunSeconds : defaultStunSeconds;
+                    StartCoroutine(HurtRoutine(stun, wouldKnockback));
+                }
+                return;
+            }
+            else
+            {
+                // é€šå¸¸ã‚¬ãƒ¼ãƒ‰ï¼šãƒ€ãƒ¡ãƒ¼ã‚¸è»½æ¸›ï¼‹ã‚¹ã‚¿ãƒŸãƒŠæ¶ˆè²»ï¼ˆãƒãƒƒã‚¯ãƒãƒƒã‚¯ã¯è»½æ¸›ã—ã¦ã„ãªã„è¨­è¨ˆï¼‰
+                int reduced = Mathf.CeilToInt(hpDamage * guardDamageMultiplier);
+                stamina = Mathf.Max(0f, stamina - staminaCost);
+                _regenBlockedUntil = Time.time + regenDelayAfterGuardHit;
+                ApplyDamage(reduced);
+                return;
+            }
         }
 
-        // ”ñƒK[ƒh
+        // éã‚¬ãƒ¼ãƒ‰æ™‚
         ApplyDamage(hpDamage);
         if (hp <= 0) return;
 
         if (hit.causeStun)
         {
             float stun = (hit.stunSeconds > 0f) ? hit.stunSeconds : defaultStunSeconds;
-
-            // ‚³‚«‚Ù‚ÇŒvZ‚µ‚½ƒmƒbƒNƒoƒbƒN‚ğ“K—p
             StartCoroutine(HurtRoutine(stun, wouldKnockback));
         }
+    }
+
+    // optional ãƒ•ãƒ©ã‚°ã‚’æ§‹é€ ä½“/ã‚¯ãƒ©ã‚¹ã‹ã‚‰å®‰å…¨ã«èª­ã‚€ï¼ˆãªã‘ã‚Œã° defaultValï¼‰
+    static bool GetOptionalBoolFlag<T>(in T hit, string name, bool defaultVal)
+    {
+        object boxed = hit; // in å¼•æ•°ã§ã‚‚ box ã™ã‚Œã°åå°„ã§èª­ã‚ã‚‹
+        var ty = boxed.GetType();
+        // ãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰å„ªå…ˆ
+        var f = ty.GetField(name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+        if (f != null && f.FieldType == typeof(bool)) return (bool)f.GetValue(boxed);
+        // ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£ã§ã‚‚å¯
+        var p = ty.GetProperty(name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+        if (p != null && p.PropertyType == typeof(bool)) return (bool)p.GetValue(boxed);
+        return defaultVal;
     }
 
     IEnumerator HurtRoutine(float stunSeconds, Vector2 knockbackImpulse)
@@ -178,25 +212,25 @@ public class PlayerHealthGuard : MonoBehaviour, IHittable
         if (IsDead) return;
         IsDead = true;
 
-        // ‚·‚×‚Ä‚Ìs“®ƒtƒ‰ƒO‚ğ—‚Æ‚·•–³“GŒÅ’è
+        // ã™ã¹ã¦ã®è¡Œå‹•ãƒ•ãƒ©ã‚°ã‚’è½ã¨ã™ï¼†ç„¡æ•µå›ºå®š
         IsGuarding = false;
         IsHurt = false;
         IsDashing = false;
         _iFrameUntil = float.PositiveInfinity;
 
-        // AnimatorFDead‚Ö
+        // Animatorï¼šDeadã¸
         if (bodyAnimator)
         {
             bodyAnimator.SetBool(guardBoolParam, false);
             bodyAnimator.SetBool(hurtBoolParam, false);
-            bodyAnimator.SetBool(deadBoolParam, true); // AnyState¨Down ‚Ö
+            bodyAnimator.SetBool(deadBoolParam, true); // AnyStateâ†’Down ã¸
 
             bodyAnimator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-            bodyAnimator.updateMode = AnimatorUpdateMode.UnscaledTime; // timeScale 0‚Å‚à“®‚­
-            bodyAnimator.CrossFadeInFixedTime("Down", 0f, 0, 0f);       // ‚»‚ÌƒtƒŒ[ƒ€“ªo‚µÄ¶
+            bodyAnimator.updateMode = AnimatorUpdateMode.UnscaledTime; // timeScale 0ã§ã‚‚å‹•ã
+            bodyAnimator.CrossFadeInFixedTime("Down", 0f, 0, 0f);       // ãã®ãƒ•ãƒ¬ãƒ¼ãƒ é ­å‡ºã—
         }
 
-        // YOU DIED ¨ ƒŠƒ[ƒh
+        // YOU DIED â†’ ãƒªãƒ­ãƒ¼ãƒ‰
         StartCoroutine(DeathSequence());
     }
 
@@ -205,7 +239,6 @@ public class PlayerHealthGuard : MonoBehaviour, IHittable
         if (deathUI) yield return deathUI.PlayAndReload(reloadDelayAfterText);
         else
         {
-            // ƒtƒH[ƒ‹ƒoƒbƒNF­‚µ‘Ò‚Á‚ÄƒŠƒ[ƒh
             yield return new WaitForSeconds(1.2f + reloadDelayAfterText);
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }

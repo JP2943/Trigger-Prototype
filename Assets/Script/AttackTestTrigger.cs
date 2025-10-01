@@ -17,7 +17,18 @@ public class AttackTestTrigger : MonoBehaviour
     void Awake()
     {
         // 未割当なら自動でシーン中から探す（1体だけ想定）
-        if (!target) target = FindObjectOfType<BossGorillaAttack>();
+        if (!target)
+        {
+#if UNITY_2023_1_OR_NEWER
+            // 推奨API（Unity 2023.1+）
+            target = Object.FindFirstObjectByType<BossGorillaAttack>(FindObjectsInactive.Exclude);
+#else
+            // 旧API（フォールバック）
+#pragma warning disable CS0618
+            target = Object.FindObjectOfType<BossGorillaAttack>();
+#pragma warning restore CS0618
+#endif
+        }
     }
 
     void Update()
@@ -40,7 +51,7 @@ public class AttackTestTrigger : MonoBehaviour
             }
         }
 
-        // 予備の旧API（プロジェクトがBoth設定の場合のみ反応）
+        // 予備の旧Input（プロジェクトが Both 設定の場合のみ反応）
         if (Input.GetKeyDown(KeyCode.P))
         {
             if (target) target.DoAttack();
@@ -49,6 +60,17 @@ public class AttackTestTrigger : MonoBehaviour
 
     void OnValidate()
     {
+        if (!target)
+        {
+#if UNITY_2023_1_OR_NEWER
+            target = Object.FindFirstObjectByType<BossGorillaAttack>(FindObjectsInactive.Exclude);
+#else
+#pragma warning disable CS0618
+            target = Object.FindObjectOfType<BossGorillaAttack>();
+#pragma warning restore CS0618
+#endif
+        }
+
         if (!target)
             Debug.LogWarning("[AttackTestTrigger] target 未割当", this);
     }

@@ -3,18 +3,27 @@ using UnityEngine;
 /// 攻撃側→被弾側に渡す情報
 public struct HitInfo
 {
-    public int damage;                 // 与ダメージ
-    public float guardStaminaCost;     // ガード時のスタミナ消費
+    // ダメージ
+    public int damage;                 // HP へのダメージ（整数）
+    public float guardStaminaCost;     // ガード成立時に消費するスタミナ量
 
-    // 追加：のけぞり関連
-    public bool causeStun;             // true のとき被弾モーション＋行動不能にする
-    public float stunSeconds;          // スタン時間（0以下なら被弾側のデフォルト）
-    public Vector2 knockback;          // (X:横の衝撃量, Y:上方向の衝撃量)。Xは攻撃方向に応じて±で適用
+    // 反動
+    public Vector2 knockback;          // インパルス量
+    public Vector2 hitNormal;          // 攻撃者→被弾者 方向の法線（x符号で左右を判定）
 
-    // 付随情報（演出など）
-    public Vector2 hitPoint;
-    public Vector2 hitNormal;          // 攻撃→被弾者の方向（normalized）
-    public GameObject source;
+    // ★ 追加：衝突点（任意で参照）
+    public Vector2 hitPoint;           // ヒットしたワールド座標
+
+    // ★ 追加：攻撃元（任意で参照：発射者/弾など）
+    public GameObject source;          // このヒットの発生元
+
+    // スタン
+    public bool causeStun;             // true なら被弾硬直を与える
+    public float stunSeconds;          // 硬直時間
+
+    // ガード相互作用
+    public bool unblockable;           // 通常ガードを貫通（=ガード中でも通常被弾）
+    public bool justGuardable;         // ジャスト成立なら無効化できる
 }
 
 /// これを実装した対象は攻撃を受けられる

@@ -29,7 +29,7 @@ public class JustGuardHandler : MonoBehaviour
     [Tooltip("Destroyまでの余韻")] public float destroyGrace = 0.1f;
 
     [Header("VFX - Appearance")]
-    [Range(0f, 1f)] public float vfxAlpha = 1f;  // ★ 追加：透明度（0〜1）
+    [Range(0f, 1f)] public float vfxAlpha = 1f;  // 透明度（0〜1）
     [Tooltip("マテリアル/パーティクルの色アルファに vfxAlpha を乗算")]
     public bool applyAlphaToMaterials = true;
 
@@ -61,7 +61,7 @@ public class JustGuardHandler : MonoBehaviour
             if (prop != null && prop.PropertyType == typeof(bool))
             {
                 bool now = (bool)prop.GetValue(guardProvider);
-                if (!_prevGuard && now) pressedThisFrame = true;
+                if (!_prevGuard && now) pressedThisFrame = true; // ガード押下立ち上がり
                 _prevGuard = now;
             }
         }
@@ -127,7 +127,7 @@ public class JustGuardHandler : MonoBehaviour
                 var m = ps.main;
                 if (forceNoLoop) m.loop = false;
 
-                // 開始遅延があると短尺で出ないことがある
+                // 開始遅延を潰す
                 if (m.startDelay.mode != ParticleSystemCurveMode.Constant || m.startDelay.constant > 0f)
                     m.startDelay = 0f;
 
@@ -140,7 +140,7 @@ public class JustGuardHandler : MonoBehaviour
                     col.a = Mathf.Clamp01(col.a * vfxAlpha);
                     m.startColor = new ParticleSystem.MinMaxGradient(col);
 
-                    // colorOverLifetime（あればアルファを乗算）
+                    // colorOverLifetime のアルファを乗算
                     var colLife = ps.colorOverLifetime;
                     if (colLife.enabled)
                     {
@@ -219,7 +219,6 @@ public class JustGuardHandler : MonoBehaviour
     static void TrySetMaterialAlpha(Material m, float alpha)
     {
         alpha = Mathf.Clamp01(alpha);
-        // よく使われるカラー名を順に試す
         var ids = new int[]
         {
             Shader.PropertyToID("_BaseColor"),
@@ -238,7 +237,6 @@ public class JustGuardHandler : MonoBehaviour
                 break;
             }
         }
-        // 一応 Transparent キューに
-        m.renderQueue = 3000;
+        m.renderQueue = 3000; // Transparent
     }
 }
