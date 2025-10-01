@@ -720,6 +720,11 @@ MonoBehaviour:
   onBossDown:
     m_PersistentCalls:
       m_Calls: []
+  onStaminaBreak:
+    m_PersistentCalls:
+      m_Calls: []
+  stunController: {fileID: 0}
+  stunOnStaminaZero: 1
 --- !u!1 &189173815
 GameObject:
   m_ObjectHideFlags: 0
@@ -4498,6 +4503,7 @@ GameObject:
   - component: {fileID: 1582107681}
   - component: {fileID: 1582107682}
   - component: {fileID: 1582107683}
+  - component: {fileID: 1582107684}
   m_Layer: 0
   m_Name: BossGorilla_2
   m_TagString: Untagged
@@ -4567,6 +4573,11 @@ MonoBehaviour:
   onBossDown:
     m_PersistentCalls:
       m_Calls: []
+  onStaminaBreak:
+    m_PersistentCalls:
+      m_Calls: []
+  stunController: {fileID: 1582107684}
+  stunOnStaminaZero: 1
 --- !u!114 &1582107683
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4599,6 +4610,28 @@ MonoBehaviour:
   autoGoReadyWhenPlayerIsLeft: 1
   holdAfterAttackSeconds: 2
   player: {fileID: 687344922}
+--- !u!114 &1582107684
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1582107679}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f8cc8b98c29a484ab334561f5cbd943, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  animator: {fileID: 1582107681}
+  rb: {fileID: 0}
+  disableWhileStunned:
+  - {fileID: 1582107683}
+  hitboxesToDisable: []
+  stunTrigger: Stun
+  recoverTrigger: Recover
+  stunSeconds: 3
+  zeroVelocityOnEnter: 1
+  invulnerableDuringStun: 0
 --- !u!1 &1597142631
 GameObject:
   m_ObjectHideFlags: 0

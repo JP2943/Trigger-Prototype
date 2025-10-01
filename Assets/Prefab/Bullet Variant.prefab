@@ -34,7 +34,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4441104389601224386, guid: 098b261cd07d69743a707e36a218eb38, type: 3}
       propertyPath: guardStaminaCost
-      value: 100
+      value: 500
       objectReference: {fileID: 0}
     - target: {fileID: 4792199933046518285, guid: 098b261cd07d69743a707e36a218eb38, type: 3}
       propertyPath: m_Color.b
